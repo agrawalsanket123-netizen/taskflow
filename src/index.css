@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Custom Properties ── */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --accent: #4f46e5;
+  --accent-light: #eef2ff;
+  --accent-dark: #3730a3;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+}
+
+.dark {
+  --bg: #020617;
+  --surface: #0f172a;
+  --surface-2: #1e293b;
+  --accent: #6366f1;
+  --accent-light: #1e1b4b;
+  --accent-dark: #818cf8;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #1e293b;
+}
+
+/* ── Global Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Safe area for Android bottom nav */
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── Page Background Gradient ── */
+.page-bg {
+  background: linear-gradient(160deg, var(--bg) 0%, var(--surface) 50%, var(--accent-light) 100%);
+  min-height: calc(100vh - 5rem);
+}
+
+/* ── Glass Card ── */
+.glass-card {
+  background: rgba(var(--surface-rgb, 255, 255, 255), 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
+}
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.7);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2), 0 8px 32px rgba(0,0,0,0.1);
+}
+
+/* ── Accent Button ── */
+.btn-accent {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #4338ca 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+  transition: all 0.2s ease;
+}
+.btn-accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(79,70,229,0.45);
+}
+.btn-accent:active {
+  transform: translateY(0);
+}
+
+/* ── Bottom Sheet ── */
+.bottom-sheet {
+  animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ── Task Card Hover ── */
+.task-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15,23,42,0.09);
+}
+
+/* ── Category Chips ── */
+.chip-work    { background: #ede9fe; color: #5b21b6; }
+.chip-personal { background: #d1fae5; color: #065f46; }
+.chip-health  { background: #ffe4e6; color: #9f1239; }
+.chip-study   { background: #fef9c3; color: #854d0e; }
+
+/* ── Checkbox Custom ── */
+.custom-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+  position: relative;
+}
+.custom-check:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  animation: pop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.custom-check:checked::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 5l3.5 3.5L11 1' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+/* ── Strikethrough for done tasks ── */
+.task-done .task-title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pop {
+  0%   { transform: scale(0.7); }
+  100% { transform: scale(1); }
+}

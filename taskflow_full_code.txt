@@ -1,0 +1,1342 @@
+﻿=== index.html ===
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TaskFlow" />
+    <meta name="description" content="Personal daily and weekly task manager. Works offline." />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <title>TaskFlow</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+
+=== vite.config.js ===
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'icons/*.png'],
+      manifest: {
+        name: 'TaskFlow',
+        short_name: 'TaskFlow',
+        description: 'Personal daily & weekly task manager',
+        start_url: '/',
+        display: 'standalone',
+        theme_color: '#4f46e5',
+        background_color: '#f8fafc',
+        icons: [
+          {
+            src: '/icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
+  ],
+})
+
+
+=== tailwind.config.js ===
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      colors: {
+        indigo: {
+          50: '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+        },
+      },
+      boxShadow: {
+        glass: '0 4px 24px 0 rgba(79,70,229,0.08)',
+        card: '0 1px 4px 0 rgba(15,23,42,0.06), 0 4px 16px 0 rgba(15,23,42,0.04)',
+        modal: '0 -4px 40px 0 rgba(15,23,42,0.12)',
+      },
+      borderRadius: {
+        '2xl': '1rem',
+        '3xl': '1.5rem',
+        '4xl': '2rem',
+      },
+      animation: {
+        'slide-up': 'slideUp 0.3s cubic-bezier(0.32,0.72,0,1)',
+        'fade-in': 'fadeIn 0.2s ease',
+        'pop': 'pop 0.15s cubic-bezier(0.34,1.56,0.64,1)',
+      },
+      keyframes: {
+        slideUp: {
+          from: { transform: 'translateY(100%)' },
+          to: { transform: 'translateY(0)' },
+        },
+        fadeIn: {
+          from: { opacity: 0 },
+          to: { opacity: 1 },
+        },
+        pop: {
+          '0%': { transform: 'scale(0.8)' },
+          '100%': { transform: 'scale(1)' },
+        },
+      },
+    },
+  },
+  plugins: [],
+}
+
+
+=== src/index.css ===
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* â”€â”€ Custom Properties â”€â”€ */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --accent: #4f46e5;
+  --accent-light: #eef2ff;
+  --accent-dark: #3730a3;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+}
+
+/* â”€â”€ Global Reset â”€â”€ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Safe area for Android bottom nav */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* â”€â”€ Scrollbar â”€â”€ */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* â”€â”€ Page Background Gradient â”€â”€ */
+.page-bg {
+  background: linear-gradient(160deg, #f8fafc 0%, #ffffff 50%, #eef2ff 100%);
+  min-height: calc(100vh - 5rem);
+}
+
+/* â”€â”€ Glass Card â”€â”€ */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
+}
+
+/* â”€â”€ Accent Button â”€â”€ */
+.btn-accent {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #4338ca 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+  transition: all 0.2s ease;
+}
+.btn-accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(79,70,229,0.45);
+}
+.btn-accent:active {
+  transform: translateY(0);
+}
+
+/* â”€â”€ Bottom Sheet â”€â”€ */
+.bottom-sheet {
+  animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* â”€â”€ Task Card Hover â”€â”€ */
+.task-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15,23,42,0.09);
+}
+
+/* â”€â”€ Category Chips â”€â”€ */
+.chip-work    { background: #ede9fe; color: #5b21b6; }
+.chip-personal { background: #d1fae5; color: #065f46; }
+.chip-health  { background: #ffe4e6; color: #9f1239; }
+.chip-study   { background: #fef9c3; color: #854d0e; }
+
+/* â”€â”€ Checkbox Custom â”€â”€ */
+.custom-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+  position: relative;
+}
+.custom-check:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  animation: pop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.custom-check:checked::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 5l3.5 3.5L11 1' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+/* â”€â”€ Strikethrough for done tasks â”€â”€ */
+.task-done .task-title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pop {
+  0%   { transform: scale(0.7); }
+  100% { transform: scale(1); }
+}
+
+
+=== src/main.jsx ===
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+
+=== src/App.jsx ===
+import { useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import BottomNav from './components/BottomNav'
+import Today from './pages/Today'
+import Week from './pages/Week'
+import Notes from './pages/Notes'
+import { todayStr } from './utils/dateHelpers'
+
+export default function App() {
+  const [selectedDay, setSelectedDay] = useState(todayStr())
+
+  return (
+    <BrowserRouter>
+      <div className="min-h-screen bg-slate-50 relative">
+        <Routes>
+          <Route path="/" element={
+            <Today selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
+          } />
+          <Route path="/week" element={
+            <Week selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
+          } />
+          <Route path="/notes" element={<Notes />} />
+        </Routes>
+        <BottomNav />
+      </div>
+    </BrowserRouter>
+  )
+}
+
+
+=== src/utils/storage.js ===
+// â”€â”€ Storage keys â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const TASKS_KEY = 'tf_tasks'
+const NOTES_KEY = 'tf_notes'
+
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const parse = (key) => {
+  try { return JSON.parse(localStorage.getItem(key) || '[]') }
+  catch { return [] }
+}
+const save = (key, data) => localStorage.setItem(key, JSON.stringify(data))
+
+// â”€â”€ Tasks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const getTasks = () => parse(TASKS_KEY)
+
+export const getTasksForDate = (dateStr) =>
+  getTasks().filter((t) => t.date === dateStr)
+
+export const addTask = (task) => {
+  const tasks = getTasks()
+  save(TASKS_KEY, [...tasks, task])
+}
+
+export const updateTask = (id, patch) => {
+  const tasks = getTasks().map((t) => (t.id === id ? { ...t, ...patch } : t))
+  save(TASKS_KEY, tasks)
+}
+
+export const deleteTask = (id) => {
+  save(TASKS_KEY, getTasks().filter((t) => t.id !== id))
+}
+
+export const saveTasks = (tasks) => save(TASKS_KEY, tasks)
+
+// â”€â”€ Notes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const getNotes = () => parse(NOTES_KEY)
+
+export const addNote = (note) => {
+  save(NOTES_KEY, [...getNotes(), note])
+}
+
+export const updateNote = (id, patch) => {
+  const notes = getNotes().map((n) => (n.id === id ? { ...n, ...patch } : n))
+  save(NOTES_KEY, notes)
+}
+
+export const deleteNote = (id) => {
+  save(NOTES_KEY, getNotes().filter((n) => n.id !== id))
+}
+
+
+=== src/utils/dateHelpers.js ===
+import {
+  format,
+  parseISO,
+  isToday,
+  startOfWeek,
+  addDays,
+  addWeeks,
+  subWeeks,
+  isBefore,
+  isAfter,
+  addHours,
+} from 'date-fns'
+
+// â”€â”€ Today as YYYY-MM-DD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const todayStr = () => format(new Date(), 'yyyy-MM-dd')
+
+// â”€â”€ Format a YYYY-MM-DD string for display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const formatDate = (dateStr) => {
+  try { return format(parseISO(dateStr), 'EEE, d MMM') }
+  catch { return dateStr }
+}
+
+// â”€â”€ Full formatted date for header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const formatDateLong = (dateStr) => {
+  try { return format(parseISO(dateStr), 'EEEE, d MMMM yyyy') }
+  catch { return dateStr }
+}
+
+// â”€â”€ Returns Monâ€“Sun Date[] for the week containing refDate â”€
+export const getWeekDays = (refDate = new Date()) => {
+  const monday = startOfWeek(refDate, { weekStartsOn: 1 })
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i))
+}
+
+// â”€â”€ Navigate week â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const nextWeek = (refDate) => addWeeks(refDate, 1)
+export const prevWeek = (refDate) => subWeeks(refDate, 1)
+
+// â”€â”€ Is a Date today â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const isDateToday = (date) => isToday(date)
+
+// â”€â”€ Date to YYYY-MM-DD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const dateToStr = (date) => format(date, 'yyyy-MM-dd')
+
+// â”€â”€ Due status: 'overdue' | 'soon' | null â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const getDueStatus = (task) => {
+  if (task.done || !task.date) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // Build due datetime
+  let dueDate
+  try {
+    dueDate = parseISO(task.date)
+    if (task.dueTime) {
+      const [h, m] = task.dueTime.split(':').map(Number)
+      dueDate.setHours(h, m, 0, 0)
+    } else {
+      dueDate.setHours(23, 59, 59, 0)
+    }
+  } catch { return null }
+
+  const now = new Date()
+  if (isBefore(dueDate, now)) return 'overdue'
+  if (isBefore(dueDate, addHours(now, 24))) return 'soon'
+  return null
+}
+
+// â”€â”€ Does this date string have any tasks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const hasTasksOnDate = (tasks, dateStr) =>
+  tasks.some((t) => t.date === dateStr)
+
+// â”€â”€ Format time for display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const formatTime = (timeStr) => {
+  if (!timeStr) return ''
+  try {
+    const [h, m] = timeStr.split(':').map(Number)
+    const d = new Date()
+    d.setHours(h, m)
+    return format(d, 'h:mm a')
+  } catch { return timeStr }
+}
+
+// â”€â”€ Format relative timestamp â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const formatRelative = (isoStr) => {
+  try {
+    const diff = Date.now() - new Date(isoStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    const days = Math.floor(hrs / 24)
+    return `${days}d ago`
+  } catch { return '' }
+}
+
+
+=== src/components/BottomNav.jsx ===
+import { CalendarDays, LayoutGrid, StickyNote } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+
+const tabs = [
+  { to: '/', label: 'Today', icon: CalendarDays, end: true },
+  { to: '/week', label: 'Week', icon: LayoutGrid },
+  { to: '/notes', label: 'Notes', icon: StickyNote },
+]
+
+export default function BottomNav() {
+  return (
+    <nav className="fixed bottom-0 inset-x-0 z-50"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="glass-card border-t border-slate-200 bg-white/90 backdrop-blur-xl">
+        <div className="flex items-center justify-around px-2 py-2">
+          {tabs.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-0.5 px-5 py-1.5 rounded-2xl transition-all duration-200 min-w-[64px]
+                ${isActive
+                  ? 'text-indigo-600 bg-indigo-50'
+                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    size={22}
+                    strokeWidth={isActive ? 2.2 : 1.8}
+                    className={`transition-all duration-200 ${isActive ? 'scale-110' : ''}`}
+                  />
+                  <span className={`text-[11px] font-semibold tracking-tight ${isActive ? 'text-indigo-600' : ''}`}>
+                    {label}
+                  </span>
+                  {isActive && (
+                    <span className="absolute bottom-2 w-1 h-1 rounded-full bg-indigo-500" />
+                  )}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      </div>
+    </nav>
+  )
+}
+
+
+=== src/components/TaskCard.jsx ===
+import { Trash2, Pencil, ChevronDown, ChevronUp, Clock } from 'lucide-react'
+import { useState } from 'react'
+import { getDueStatus, formatTime } from '../utils/dateHelpers'
+
+const CATEGORY_LABELS = {
+  work: 'Work', personal: 'Personal', health: 'Health', study: 'Study',
+}
+
+const chipClass = {
+  work: 'chip-work', personal: 'chip-personal', health: 'chip-health', study: 'chip-study',
+}
+
+export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
+  const [noteOpen, setNoteOpen] = useState(false)
+  const dueStatus = getDueStatus(task)
+
+  return (
+    <div className={`task-card glass-card rounded-2xl px-4 py-3.5 mb-3 ${task.done ? 'task-done opacity-60' : ''}`}>
+      <div className="flex items-start gap-3">
+        {/* Checkbox */}
+        <input
+          type="checkbox"
+          className="custom-check mt-0.5"
+          checked={task.done}
+          onChange={() => onToggle(task.id)}
+          id={`task-${task.id}`}
+        />
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <label
+              htmlFor={`task-${task.id}`}
+              className="task-title font-semibold text-slate-800 text-sm leading-snug cursor-pointer select-none"
+            >
+              {task.title}
+            </label>
+            {/* Actions */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => onEdit(task)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                aria-label="Edit task"
+              >
+                <Pencil size={14} />
+              </button>
+              <button
+                onClick={() => onDelete(task.id)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                aria-label="Delete task"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Meta row */}
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            {task.category && (
+              <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${chipClass[task.category]}`}>
+                {CATEGORY_LABELS[task.category]}
+              </span>
+            )}
+
+            {/* Due badge */}
+            {dueStatus === 'overdue' && (
+              <span className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-600">
+                <Clock size={10} />
+                {task.dueTime ? formatTime(task.dueTime) : 'Overdue'}
+              </span>
+            )}
+            {dueStatus === 'soon' && (
+              <span className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                <Clock size={10} />
+                Due {task.dueTime ? formatTime(task.dueTime) : 'soon'}
+              </span>
+            )}
+            {!dueStatus && task.dueTime && (
+              <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                <Clock size={10} />
+                {formatTime(task.dueTime)}
+              </span>
+            )}
+
+            {/* Note toggle */}
+            {task.note && (
+              <button
+                onClick={() => setNoteOpen((o) => !o)}
+                className="flex items-center gap-1 text-[11px] text-indigo-500 font-medium hover:text-indigo-700 transition-colors ml-auto"
+              >
+                {noteOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                Note
+              </button>
+            )}
+          </div>
+
+          {/* Expandable note */}
+          {noteOpen && task.note && (
+            <p className="mt-2.5 text-xs text-slate-500 leading-relaxed bg-slate-50 rounded-xl p-3 border border-slate-100 animate-[fade-in_0.2s_ease]">
+              {task.note}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+=== src/components/TaskModal.jsx ===
+import { useState, useEffect } from 'react'
+import { X } from 'lucide-react'
+import { v4 as uuidv4 } from 'uuid'
+import { todayStr } from '../utils/dateHelpers'
+
+const CATEGORIES = ['work', 'personal', 'health', 'study']
+const CAT_LABELS = { work: 'Work', personal: 'Personal', health: 'Health', study: 'Study' }
+const CAT_COLORS = {
+  work: 'bg-violet-100 text-violet-700 ring-violet-400',
+  personal: 'bg-emerald-100 text-emerald-700 ring-emerald-400',
+  health: 'bg-rose-100 text-rose-700 ring-rose-400',
+  study: 'bg-amber-100 text-amber-700 ring-amber-400',
+}
+
+const empty = (date) => ({
+  id: uuidv4(),
+  title: '',
+  category: 'work',
+  date: date || todayStr(),
+  dueTime: '',
+  note: '',
+  done: false,
+  createdAt: new Date().toISOString(),
+})
+
+export default function TaskModal({ open, task, defaultDate, onSave, onClose }) {
+  const [form, setForm] = useState(empty(defaultDate))
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setForm(task ? { ...task } : empty(defaultDate))
+      setError('')
+    }
+  }, [open, task, defaultDate])
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const handleSave = () => {
+    if (!form.title.trim()) { setError('Title is required'); return }
+    onSave({ ...form, title: form.title.trim() })
+    onClose()
+  }
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end animate-[fade-in_0.2s_ease]">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Sheet */}
+      <div className="relative bottom-sheet bg-white rounded-t-3xl shadow-modal px-5 pt-5 pb-8 max-h-[92vh] overflow-y-auto"
+        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+        {/* Handle */}
+        <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-slate-800">
+            {task ? 'Edit Task' : 'New Task'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Title */}
+        <div className="mb-5">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Title <span className="text-rose-400">*</span>
+          </label>
+          <input
+            type="text"
+            value={form.title}
+            onChange={(e) => { set('title', e.target.value); setError('') }}
+            placeholder="What needs to be done?"
+            className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+            autoFocus
+          />
+          {error && <p className="mt-1.5 text-xs text-rose-500 font-medium">{error}</p>}
+        </div>
+
+        {/* Category */}
+        <div className="mb-5">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Category
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                onClick={() => set('category', c)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all border-2
+                  ${form.category === c
+                    ? `${CAT_COLORS[c]} ring-2 border-transparent shadow-sm scale-105`
+                    : 'bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200'
+                  }`}
+              >
+                {CAT_LABELS[c]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date + Time */}
+        <div className="flex gap-3 mb-5">
+          <div className="flex-1">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              Date
+            </label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => set('date', e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              Due time
+            </label>
+            <input
+              type="time"
+              value={form.dueTime}
+              onChange={(e) => set('dueTime', e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+            />
+          </div>
+        </div>
+
+        {/* Note */}
+        <div className="mb-7">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Note <span className="text-slate-400 normal-case font-normal">(optional)</span>
+          </label>
+          <textarea
+            value={form.note}
+            onChange={(e) => set('note', e.target.value)}
+            placeholder="Add a noteâ€¦"
+            rows={3}
+            className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3.5 rounded-2xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 py-3.5 rounded-2xl btn-accent font-semibold text-sm"
+          >
+            {task ? 'Save Changes' : 'Add Task'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+=== src/components/NoteCard.jsx ===
+import { Trash2, Pencil, FileText } from 'lucide-react'
+import { formatRelative } from '../utils/dateHelpers'
+
+export default function NoteCard({ note, onEdit, onDelete }) {
+  return (
+    <div className="task-card glass-card rounded-2xl px-4 py-4 mb-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="p-2 rounded-xl bg-indigo-50 text-indigo-500 mt-0.5 shrink-0">
+            <FileText size={16} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-slate-800 text-sm leading-snug truncate">
+              {note.title || 'Untitled Note'}
+            </h3>
+            {note.body && (
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed line-clamp-2">
+                {note.body}
+              </p>
+            )}
+            <p className="mt-2 text-[10px] text-slate-400 font-medium">
+              {formatRelative(note.updatedAt)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => onEdit(note)}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+            aria-label="Edit note"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={() => onDelete(note.id)}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+            aria-label="Delete note"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+=== src/components/NoteModal.jsx ===
+import { useState, useEffect } from 'react'
+import { X } from 'lucide-react'
+import { v4 as uuidv4 } from 'uuid'
+
+const emptyNote = () => ({
+  id: uuidv4(),
+  title: '',
+  body: '',
+  updatedAt: new Date().toISOString(),
+})
+
+export default function NoteModal({ open, note, onSave, onClose }) {
+  const [form, setForm] = useState(emptyNote())
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setForm(note ? { ...note } : emptyNote())
+      setError('')
+    }
+  }, [open, note])
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const handleSave = () => {
+    if (!form.title.trim()) { setError('Title is required'); return }
+    onSave({ ...form, title: form.title.trim(), updatedAt: new Date().toISOString() })
+    onClose()
+  }
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end animate-[fade-in_0.2s_ease]">
+      <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="relative bottom-sheet bg-white rounded-t-3xl shadow-modal px-5 pt-5 pb-8 max-h-[92vh] overflow-y-auto"
+        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+        {/* Handle */}
+        <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-slate-800">
+            {note ? 'Edit Note' : 'New Note'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Title */}
+        <div className="mb-5">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Title <span className="text-rose-400">*</span>
+          </label>
+          <input
+            type="text"
+            value={form.title}
+            onChange={(e) => { set('title', e.target.value); setError('') }}
+            placeholder="Note title"
+            className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+            autoFocus
+          />
+          {error && <p className="mt-1.5 text-xs text-rose-500 font-medium">{error}</p>}
+        </div>
+
+        {/* Body */}
+        <div className="mb-7">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Content
+          </label>
+          <textarea
+            value={form.body}
+            onChange={(e) => set('body', e.target.value)}
+            placeholder="Write your note hereâ€¦"
+            rows={7}
+            className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3.5 rounded-2xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 py-3.5 rounded-2xl btn-accent font-semibold text-sm"
+          >
+            {note ? 'Save Changes' : 'Add Note'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+=== src/pages/Today.jsx ===
+import { useState, useCallback } from 'react'
+import { Plus, CheckCircle2 } from 'lucide-react'
+import TaskCard from '../components/TaskCard'
+import TaskModal from '../components/TaskModal'
+import {
+  getTasksForDate, addTask, updateTask, deleteTask,
+} from '../utils/storage'
+import { formatDateLong, todayStr } from '../utils/dateHelpers'
+
+export default function Today({ selectedDay, setSelectedDay }) {
+  const dateStr = selectedDay || todayStr()
+  const [tasks, setTasks] = useState(() => getTasksForDate(dateStr))
+  const [modal, setModal] = useState({ open: false, task: null })
+  const [, forceUpdate] = useState(0)
+
+  const refresh = useCallback(() => {
+    setTasks(getTasksForDate(dateStr))
+  }, [dateStr])
+
+  // When selectedDay changes, refresh tasks
+  useState(() => { refresh() }, [dateStr])
+
+  const handleToggle = (id) => { updateTask(id, { done: !tasks.find(t => t.id === id)?.done }); refresh() }
+  const handleSave = (task) => {
+    if (modal.task) updateTask(task.id, task)
+    else addTask(task)
+    refresh()
+  }
+  const handleDelete = (id) => { deleteTask(id); refresh() }
+
+  const doneTasks = tasks.filter(t => t.done)
+  const pendingTasks = tasks.filter(t => !t.done)
+
+  return (
+    <div className="page-bg px-4 pt-6 pb-28 min-h-screen">
+      {/* Header */}
+      <div className="mb-6">
+        <p className="text-xs font-semibold text-indigo-500 uppercase tracking-widest mb-1">Today</p>
+        <h1 className="text-2xl font-bold text-slate-800 leading-tight">
+          {formatDateLong(dateStr)}
+        </h1>
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-sm text-slate-500">
+            {pendingTasks.length} pending
+          </span>
+          {doneTasks.length > 0 && (
+            <>
+              <span className="text-slate-300">Â·</span>
+              <span className="text-sm text-emerald-500 font-medium flex items-center gap-1">
+                <CheckCircle2 size={13} /> {doneTasks.length} done
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Task list */}
+      {tasks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-50 flex items-center justify-center mb-4">
+            <CheckCircle2 size={32} className="text-indigo-300" />
+          </div>
+          <p className="text-slate-500 font-medium text-sm">No tasks for today</p>
+          <p className="text-slate-400 text-xs mt-1">Tap + to add your first task</p>
+        </div>
+      ) : (
+        <>
+          {pendingTasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onToggle={handleToggle}
+              onEdit={(t) => setModal({ open: true, task: t })}
+              onDelete={handleDelete}
+            />
+          ))}
+          {doneTasks.length > 0 && (
+            <>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-5 mb-3 px-1">
+                Completed
+              </p>
+              {doneTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onToggle={handleToggle}
+                  onEdit={(t) => setModal({ open: true, task: t })}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </>
+          )}
+        </>
+      )}
+
+      {/* FAB */}
+      <button
+        onClick={() => setModal({ open: true, task: null })}
+        className="btn-accent fixed bottom-24 right-5 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl z-40"
+        aria-label="Add task"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+      >
+        <Plus size={24} strokeWidth={2.5} />
+      </button>
+
+      <TaskModal
+        open={modal.open}
+        task={modal.task}
+        defaultDate={dateStr}
+        onSave={handleSave}
+        onClose={() => setModal({ open: false, task: null })}
+      />
+    </div>
+  )
+}
+
+
+=== src/pages/Week.jsx ===
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight, Plus, CheckCircle2 } from 'lucide-react'
+import TaskCard from '../components/TaskCard'
+import TaskModal from '../components/TaskModal'
+import {
+  getTasksForDate, addTask, updateTask, deleteTask, getTasks,
+} from '../utils/storage'
+import {
+  getWeekDays, nextWeek, prevWeek, isDateToday, dateToStr, formatDate,
+} from '../utils/dateHelpers'
+
+const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+export default function Week({ selectedDay, setSelectedDay }) {
+  const [weekRef, setWeekRef] = useState(new Date())
+  const [modal, setModal] = useState({ open: false, task: null })
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const weekDays = getWeekDays(weekRef)
+  const allTasks = getTasks()
+  const selectedDateStr = selectedDay || dateToStr(new Date())
+  const dayTasks = getTasksForDate(selectedDateStr)
+
+  const refresh = () => setRefreshKey(k => k + 1)
+
+  const handleToggle = (id) => {
+    const task = dayTasks.find(t => t.id === id)
+    if (task) { updateTask(id, { done: !task.done }); refresh() }
+  }
+  const handleSave = (task) => {
+    if (modal.task) updateTask(task.id, task)
+    else addTask(task)
+    refresh()
+  }
+  const handleDelete = (id) => { deleteTask(id); refresh() }
+
+  return (
+    <div className="page-bg px-0 pt-6 pb-28 min-h-screen">
+      {/* Header */}
+      <div className="px-4 mb-5">
+        <p className="text-xs font-semibold text-indigo-500 uppercase tracking-widest mb-1">Weekly View</p>
+        <h1 className="text-2xl font-bold text-slate-800">Plan Your Week</h1>
+      </div>
+
+      {/* Week strip */}
+      <div className="px-4 mb-5">
+        <div className="glass-card rounded-2xl p-3">
+          {/* Week nav */}
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setWeekRef(d => prevWeek(d))}
+              className="p-2 rounded-xl text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+              aria-label="Previous week"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="text-xs font-semibold text-slate-500">
+              {formatDate(dateToStr(weekDays[0]))} â€“ {formatDate(dateToStr(weekDays[6]))}
+            </span>
+            <button
+              onClick={() => setWeekRef(d => nextWeek(d))}
+              className="p-2 rounded-xl text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+              aria-label="Next week"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* Day columns */}
+          <div className="grid grid-cols-7 gap-1">
+            {weekDays.map((day, i) => {
+              const dStr = dateToStr(day)
+              const isSelected = dStr === selectedDateStr
+              const isToday = isDateToday(day)
+              const hasTasks = allTasks.some(t => t.date === dStr)
+
+              return (
+                <button
+                  key={dStr}
+                  onClick={() => setSelectedDay(dStr)}
+                  className={`flex flex-col items-center py-2.5 px-1 rounded-xl transition-all duration-200
+                    ${isSelected
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-105'
+                      : isToday
+                        ? 'bg-indigo-50 text-indigo-600 ring-2 ring-indigo-200'
+                        : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                >
+                  <span className={`text-[10px] font-semibold uppercase tracking-wide
+                    ${isSelected ? 'text-indigo-100' : isToday ? 'text-indigo-400' : 'text-slate-400'}`}>
+                    {DAY_NAMES[i]}
+                  </span>
+                  <span className={`text-sm font-bold mt-0.5 ${isSelected ? 'text-white' : ''}`}>
+                    {day.getDate()}
+                  </span>
+                  {hasTasks && (
+                    <span className={`w-1.5 h-1.5 rounded-full mt-1
+                      ${isSelected ? 'bg-indigo-200' : 'bg-indigo-400'}`}
+                    />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Task list for selected day */}
+      <div className="px-4">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          {formatDate(selectedDateStr)}
+        </p>
+
+        {dayTasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-14 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-3">
+              <CheckCircle2 size={24} className="text-indigo-300" />
+            </div>
+            <p className="text-slate-400 text-sm">No tasks this day</p>
+          </div>
+        ) : (
+          dayTasks.map(task => (
+            <TaskCard
+              key={task.id + refreshKey}
+              task={task}
+              onToggle={handleToggle}
+              onEdit={(t) => setModal({ open: true, task: t })}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+
+      {/* FAB */}
+      <button
+        onClick={() => setModal({ open: true, task: null })}
+        className="btn-accent fixed right-5 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl z-40"
+        aria-label="Add task"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+      >
+        <Plus size={24} strokeWidth={2.5} />
+      </button>
+
+      <TaskModal
+        open={modal.open}
+        task={modal.task}
+        defaultDate={selectedDateStr}
+        onSave={handleSave}
+        onClose={() => setModal({ open: false, task: null })}
+      />
+    </div>
+  )
+}
+
+
+=== src/pages/Notes.jsx ===
+import { useState } from 'react'
+import { Plus, StickyNote } from 'lucide-react'
+import NoteCard from '../components/NoteCard'
+import NoteModal from '../components/NoteModal'
+import { getNotes, addNote, updateNote, deleteNote } from '../utils/storage'
+
+export default function Notes() {
+  const [notes, setNotes] = useState(() => getNotes().slice().reverse())
+  const [modal, setModal] = useState({ open: false, note: null })
+
+  const refresh = () => setNotes(getNotes().slice().reverse())
+
+  const handleSave = (note) => {
+    if (modal.note) updateNote(note.id, note)
+    else addNote(note)
+    refresh()
+  }
+  const handleDelete = (id) => { deleteNote(id); refresh() }
+
+  return (
+    <div className="page-bg px-4 pt-6 pb-28 min-h-screen">
+      {/* Header */}
+      <div className="mb-6">
+        <p className="text-xs font-semibold text-indigo-500 uppercase tracking-widest mb-1">Notes</p>
+        <h1 className="text-2xl font-bold text-slate-800">My Notes</h1>
+        <p className="text-sm text-slate-400 mt-1">{notes.length} note{notes.length !== 1 ? 's' : ''}</p>
+      </div>
+
+      {notes.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-50 flex items-center justify-center mb-4">
+            <StickyNote size={32} className="text-indigo-300" />
+          </div>
+          <p className="text-slate-500 font-medium text-sm">No notes yet</p>
+          <p className="text-slate-400 text-xs mt-1">Tap + to write your first note</p>
+        </div>
+      ) : (
+        notes.map(note => (
+          <NoteCard
+            key={note.id}
+            note={note}
+            onEdit={(n) => setModal({ open: true, note: n })}
+            onDelete={handleDelete}
+          />
+        ))
+      )}
+
+      {/* FAB */}
+      <button
+        onClick={() => setModal({ open: true, note: null })}
+        className="btn-accent fixed right-5 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl z-40"
+        aria-label="Add note"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+      >
+        <Plus size={24} strokeWidth={2.5} />
+      </button>
+
+      <NoteModal
+        open={modal.open}
+        note={modal.note}
+        onSave={handleSave}
+        onClose={() => setModal({ open: false, note: null })}
+      />
+    </div>
+  )
+}
+
+
+=== public/manifest.json ===
+{
+  "name": "TaskFlow",
+  "short_name": "TaskFlow",
+  "description": "Personal daily and weekly task manager",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#4f46e5",
+  "background_color": "#f8fafc",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+
+

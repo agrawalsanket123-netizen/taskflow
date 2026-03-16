@@ -74,8 +74,8 @@ export default function Health() {
         </div>
       </div>
 
-      {log.length > 0 && (
-        <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 mb-6 shadow-sm overflow-hidden">
+      {log.length > 0 ? (
+        <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 mb-6 shadow-sm overflow-hidden animate-[fade-in_0.3s_ease]">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Progress Chart</h3>
             {stats?.progress !== '0.0' && (
@@ -128,6 +128,14 @@ export default function Health() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      ) : (
+        <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-10 mb-6 shadow-sm flex flex-col items-center justify-center text-center animate-[fade-in_0.3s_ease]">
+          <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4 text-slate-300 dark:text-slate-600">
+            <TrendingDown size={24} />
+          </div>
+          <p className="text-sm font-bold text-slate-400 dark:text-slate-500">No Weight Data Yet</p>
+          <p className="text-[11px] text-slate-300 dark:text-slate-600 mt-1">Your progress chart will appear once you log your first entry.</p>
         </div>
       )}
 

@@ -139,7 +139,7 @@ export default function Health() {
         </div>
       )}
 
-      <div className="glass-card bg-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-indigo-200 dark:shadow-none mb-6">
+      <div className="bg-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-indigo-100 dark:shadow-none mb-6 overflow-hidden">
         <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
           <Scale size={18} />
           Log Today's Weight
@@ -151,7 +151,7 @@ export default function Health() {
               value={weightInput}
               onChange={(e) => setWeightInput(e.target.value)}
               placeholder="00.0"
-              className="w-full bg-white/20 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 font-bold focus:outline-none focus:ring-2 focus:ring-white/50 transition"
+              className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 font-bold focus:outline-none focus:ring-2 focus:ring-white/50 transition"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-white/50">kg</span>
           </div>

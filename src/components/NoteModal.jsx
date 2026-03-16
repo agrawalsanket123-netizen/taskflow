@@ -35,7 +35,7 @@ export default function NoteModal({ open, note, onSave, onClose }) {
       <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative bottom-sheet bg-white dark:bg-slate-900 rounded-t-3xl shadow-modal px-5 pt-5 pb-8 max-h-[92vh] overflow-y-auto"
-        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+        style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
         {/* Handle */}
         <div className="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-700 mx-auto mb-5" />
 

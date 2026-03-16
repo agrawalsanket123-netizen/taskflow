@@ -89,12 +89,12 @@ export default function Health() {
           <div className="h-48 w-full -ml-4">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
                 <XAxis 
                   dataKey="formattedDate" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
+                  tick={{ fontSize: 10, fill: 'var(--text-muted)', fontWeight: 600 }}
                   dy={10}
                 />
                 <YAxis 
@@ -104,11 +104,14 @@ export default function Health() {
                 <Tooltip 
                   contentStyle={{ 
                     borderRadius: '16px', 
-                    border: 'none', 
+                    backgroundColor: 'var(--surface)',
+                    border: '1px solid var(--border)',
                     boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                     fontSize: '12px',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    color: 'var(--text)'
                   }}
+                  itemStyle={{ color: 'var(--accent)' }}
                 />
                 {target > 0 && (
                   <ReferenceLine y={target} stroke="#f43f5e" strokeDasharray="5 5" strokeWidth={2} opacity={0.5} />

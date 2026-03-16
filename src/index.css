@@ -11,8 +11,10 @@
   --accent-light: #eef2ff;
   --accent-dark: #3730a3;
   --text: #0f172a;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
+  --text-muted: #475569; /* Darker than before */
+  --border: #cbd5e1; /* Darker than before */
+  --chart-grid: #e2e8f0;
+  --chart-text: #64748b;
 }
 
 .dark {
@@ -25,6 +27,8 @@
   --text: #f8fafc;
   --text-muted: #94a3b8;
   --border: #1e293b;
+  --chart-grid: #1e293b;
+  --chart-text: #94a3b8;
 }
 
 /* ── Global Reset ── */

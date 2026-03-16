@@ -12,9 +12,9 @@ const tabs = [
 
 export default function Navbar() {
   return (
-    <nav className="fixed top-0 inset-x-0 z-50 pt-[env(safe-area-inset-top)]">
-      <div className="border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl transition-colors">
-        <div className="flex items-center justify-around px-1 py-2">
+    <nav className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
+      <div className="border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl transition-colors shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-around px-1 py-3">
           {tabs.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}

@@ -89,12 +89,12 @@ export default function Health() {
           <div className="h-48 w-full -ml-4">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" opacity={1} />
                 <XAxis 
                   dataKey="formattedDate" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fill: 'var(--text-muted)', fontWeight: 600 }}
+                  tick={{ fontSize: 10, fill: 'var(--chart-text)', fontWeight: 600 }}
                   dy={10}
                 />
                 <YAxis 

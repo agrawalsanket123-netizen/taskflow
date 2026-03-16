@@ -86,32 +86,33 @@ export default function Health() {
             )}
           </div>
           
-          <div className="h-48 w-full -ml-4">
+          <div className="h-48 w-full -ml-4 bg-white dark:bg-transparent rounded-2xl p-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" opacity={1} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={1} />
                 <XAxis 
                   dataKey="formattedDate" 
-                  axisLine={false} 
+                  axisLine={{ stroke: '#94a3b8' }} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fill: 'var(--chart-text)', fontWeight: 600 }}
+                  tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 600 }}
                   dy={10}
                 />
                 <YAxis 
                   hide 
+                  axisLine={{ stroke: '#94a3b8' }}
                   domain={['dataMin - 2', 'dataMax + 2']} 
                 />
                 <Tooltip 
                   contentStyle={{ 
                     borderRadius: '16px', 
-                    backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--border)',
+                    backgroundColor: 'white',
+                    border: '1px solid #e2e8f0',
                     boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                     fontSize: '12px',
                     fontWeight: 'bold',
-                    color: 'var(--text)'
+                    color: '#0f172a'
                   }}
-                  itemStyle={{ color: 'var(--accent)' }}
+                  itemStyle={{ color: '#4f46e5' }}
                 />
                 {target > 0 && (
                   <ReferenceLine y={target} stroke="#f43f5e" strokeDasharray="5 5" strokeWidth={2} opacity={0.5} />
@@ -119,9 +120,9 @@ export default function Health() {
                 <Line 
                   type="monotone" 
                   dataKey="weight" 
-                  stroke="#6366f1" 
+                  stroke="#4f46e5" 
                   strokeWidth={4} 
-                  dot={{ r: 4, fill: '#6366f1', strokeWidth: 2, stroke: '#fff' }}
+                  dot={{ r: 4, fill: '#4f46e5', strokeWidth: 2, stroke: '#fff' }}
                   activeDot={{ r: 6, strokeWidth: 0 }}
                   animationDuration={1000}
                 />

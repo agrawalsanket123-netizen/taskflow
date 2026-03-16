@@ -266,7 +266,7 @@ export default function Week({ selectedDay, setSelectedDay }) {
         onClick={() => setModal({ open: true, task: null })}
         className="btn-accent fixed right-5 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl z-40 transition-transform active:scale-90"
         aria-label="Add task"
-        style={{ bottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
+        style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
       >
         <Plus size={24} strokeWidth={2.5} />
       </button>

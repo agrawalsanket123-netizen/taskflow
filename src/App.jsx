@@ -12,6 +12,7 @@ import { todayStr } from './utils/dateHelpers'
 import { getTheme } from './utils/storage'
 import { checkAndNotifyTasks } from './utils/notifications'
 import { runMigrations } from './utils/migration'
+import { syncFcmToken } from './utils/sync'
 
 // Run migrations before everything
 runMigrations()
@@ -23,6 +24,12 @@ export default function App() {
     const theme = getTheme()
     if (theme === 'dark') {
       document.documentElement.classList.add('dark')
+    }
+
+    // Auto-sync FCM token to Supabase if it exists
+    const token = localStorage.getItem('tf_fcm_token')
+    if (token) {
+      syncFcmToken(token)
     }
 
     // Initial check and interval for notifications

@@ -8,7 +8,13 @@ export async function requestNotificationPermission() {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return null;
     
-    const currentToken = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
+    // Register the service worker manually to avoid registration timeouts
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    
+    const currentToken = await getToken(messaging, { 
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        serviceWorkerRegistration: registration
+    });
     if (currentToken) {
         console.log('FCM Token:', currentToken)
         localStorage.setItem('tf_fcm_token', currentToken)

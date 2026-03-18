@@ -59,7 +59,7 @@ export default function Today({ selectedDay, setSelectedDay }) {
           </span>
           {doneTasks.length > 0 && (
             <>
-              <span className="text-slate-300 dark:text-slate-700">·</span>
+              <span className="text-slate-400 dark:text-slate-600">·</span>
               <span className="text-sm text-emerald-500 dark:text-emerald-400 font-medium flex items-center gap-1">
                 <CheckCircle2 size={13} /> {doneTasks.length} done
               </span>

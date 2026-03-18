@@ -1,9 +1,12 @@
 import { Trash2, Pencil, FileText } from 'lucide-react'
 import { formatRelative } from '../utils/dateHelpers'
 
-export default function NoteCard({ note, onEdit, onDelete }) {
+export default function NoteCard({ note, onClick, onEdit, onDelete }) {
   return (
-    <div className="task-card glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 py-4 mb-3 transition-colors">
+    <div 
+      className="task-card glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 py-4 mb-3 transition-colors cursor-pointer active:scale-[0.98]"
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 dark:text-indigo-400 mt-0.5 shrink-0">
@@ -26,14 +29,20 @@ export default function NoteCard({ note, onEdit, onDelete }) {
 
         <div className="flex items-center gap-1 shrink-0">
           <button
-            onClick={() => onEdit(note)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit(note)
+            }}
             className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
             aria-label="Edit note"
           >
             <Pencil size={14} />
           </button>
           <button
-            onClick={() => onDelete(note.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(note.id)
+            }}
             className="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
             aria-label="Delete note"
           >

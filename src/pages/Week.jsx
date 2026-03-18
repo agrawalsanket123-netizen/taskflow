@@ -8,6 +8,7 @@ import {
 import {
   getWeekDays, nextWeek, prevWeek, isDateToday, dateToStr, formatDate,
 } from '../utils/dateHelpers'
+import { calculateStreak } from '../utils/streakHelpers'
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const CATEGORIES = ['All', 'Work', 'Personal', 'Health', 'Study']
@@ -64,22 +65,7 @@ export default function Week({ selectedDay, setSelectedDay }) {
     let maxStreak = 0
     
     habits.forEach(h => {
-      let currentStreak = 0
-      let d = new Date()
-      while (true) {
-        const dStr = dateToStr(d)
-        if (completions[`${h.id}_${dStr}`]) {
-          currentStreak++
-          d.setDate(d.getDate() - 1)
-        } else {
-          // If it's today and not done, it might still continue from yesterday
-          if (dStr === dateToStr(new Date())) {
-            d.setDate(d.getDate() - 1)
-            continue
-          }
-          break
-        }
-      }
+      const currentStreak = calculateStreak(h.id, completions, h.intervalDays)
       if (currentStreak > maxStreak) maxStreak = currentStreak
     })
 

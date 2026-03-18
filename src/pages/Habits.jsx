@@ -39,10 +39,35 @@ export default function Habits() {
   }
 
   const sortedHabits = useMemo(() => {
-    return [...habits].sort((a, b) => {
+    return habits.map(h => {
+      // Find last completion date
+      const completionsForHabit = Object.keys(completions)
+        .filter(key => key.startsWith(`${h.id}_`))
+        .map(key => key.split('_')[1])
+        .sort()
+      
+      const lastCompletion = completionsForHabit.length > 0 
+        ? completionsForHabit[completionsForHabit.length - 1] 
+        : null
+      
+      let dueDays = 0
+      if (lastCompletion) {
+        const lastDate = new Date(lastCompletion)
+        const todayDate = new Date(today)
+        const diffTime = Math.abs(todayDate - lastDate)
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        dueDays = Math.max(0, (h.intervalDays || 1) - diffDays)
+      }
+
+      return { ...h, dueDays }
+    }).sort((a, b) => {
       const aDone = completions[`${a.id}_${today}`]
       const bDone = completions[`${b.id}_${today}`]
-      if (aDone === bDone) return 0
+      if (aDone === bDone) {
+        // Sort by due status if both not done
+        if (!aDone) return a.dueDays - b.dueDays
+        return 0
+      }
       return aDone ? 1 : -1
     })
   }, [habits, completions, today, refreshKey])
@@ -103,7 +128,8 @@ export default function Habits() {
               key={habit.id + refreshKey}
               habit={habit}
               isCompleted={!!completions[`${habit.id}_${today}`]}
-              streak={calculateStreak(habit.id, completions)}
+              dueDays={habit.dueDays}
+              streak={calculateStreak(habit.id, completions, habit.intervalDays)}
               onToggle={handleToggle}
               onClick={() => setModal({ open: true, habit })}
             />

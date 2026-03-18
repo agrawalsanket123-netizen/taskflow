@@ -11,6 +11,10 @@ import Settings from './pages/Settings'
 import { todayStr } from './utils/dateHelpers'
 import { getTheme } from './utils/storage'
 import { checkAndNotifyTasks } from './utils/notifications'
+import { runMigrations } from './utils/migration'
+
+// Run migrations before everything
+runMigrations()
 
 export default function App() {
   const [selectedDay, setSelectedDay] = useState(todayStr())

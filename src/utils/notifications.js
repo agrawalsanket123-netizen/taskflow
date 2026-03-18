@@ -1,4 +1,14 @@
-import { getNotificationPreference, getTasks } from './storage'
+import { 
+  getNotificationPreference, 
+  getTasks, 
+  getHabits, 
+  getHabitCompletions,
+  getReminders,
+  saveReminders,
+  getScheduledNotifications,
+  saveScheduledNotifications
+} from './storage'
+import { todayStr } from './dateHelpers'
 
 /**
  * Requests browser notification permission
@@ -10,46 +20,95 @@ export async function requestNotificationPermission() {
 }
 
 /**
- * Shows a browser notification
+ * Shows a browser notification using Service Worker
  */
-export function showNotification(title, body) {
+export async function showNotification(title, body) {
   if (Notification.permission === 'granted' && getNotificationPreference()) {
-    new Notification(title, { body, icon: '/pwa-192x192.png' })
+    if ('serviceWorker' in navigator) {
+      try {
+        const sw = await navigator.serviceWorker.ready
+        sw.showNotification(title, {
+          body,
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          vibrate: [100, 50, 100],
+          data: { url: window.location.origin }
+        })
+      } catch (e) {
+        console.error('SW notification failed', e)
+        new Notification(title, { body, icon: '/icons/icon-192.png' })
+      }
+    } else {
+      new Notification(title, { body, icon: '/icons/icon-192.png' })
+    }
   }
 }
 
+let activeReminders = new Map()
+
 /**
  * Checks for tasks due now and triggers notifications
- * This should be called periodically (e.g. every minute)
+ * Also manages persistent reminders
  */
-let scheduledNotifications = new Set()
-
 export function checkAndNotifyTasks() {
   if (Notification.permission !== 'granted' || !getNotificationPreference()) return
 
   const now = new Date()
+  const today = todayStr()
   const nowStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-  const today = format(now, 'yyyy-MM-dd')
   
   const tasks = getTasks()
-  const dueTasks = tasks.filter(t => t.date === today && t.dueTime === nowStr && !t.done)
+  const habits = getHabits()
+  const completions = getHabitCompletions()
+  const scheduled = getScheduledNotifications()
 
+  // 1. Due Tasks
+  const dueTasks = tasks.filter(t => t.date === today && t.dueTime === nowStr && !t.done)
   dueTasks.forEach(task => {
-    const taskId = `${task.id}_${nowStr}`
-    if (!scheduledNotifications.has(taskId)) {
+    const id = `${task.id}_${nowStr}`
+    if (!scheduled.includes(id)) {
       showNotification(task.title, 'Due now!')
-      scheduledNotifications.add(taskId)
-      // Clear from set after 1 minute to allow re-notifying if needed (though time will have passed)
-      setTimeout(() => scheduledNotifications.delete(taskId), 61000)
+      saveScheduledNotifications([...scheduled, id])
     }
   })
-}
 
-// Internal helper for simple date format
-function format(date, fmt) {
-  const d = new Date(date)
-  if (fmt === 'yyyy-MM-dd') {
-    return d.toISOString().split('T')[0]
-  }
-  return d.toString()
+  // 2. Persistent Reminders
+  const reminders = getReminders()
+  
+  // Combine tasks and habits with reminders
+  const itemsWithReminders = [
+    ...tasks.map(t => ({ ...t, type: 'task' })),
+    ...habits.map(h => ({ ...h, type: 'habit' }))
+  ].filter(item => item.reminder?.enabled && (item.type === 'task' ? !item.done : !completions[`${item.id}_${today}`]))
+
+  itemsWithReminders.forEach(item => {
+    if (!activeReminders.has(item.id)) {
+      const interval = setInterval(() => {
+        // Re-check if item is done before firing
+        const currentTasks = getTasks()
+        const currentCompletions = getHabitCompletions()
+        const isDone = item.type === 'task' 
+          ? currentTasks.find(t => t.id === item.id)?.done 
+          : currentCompletions[`${item.id}_${today}`]
+        
+        if (isDone) {
+          clearInterval(activeReminders.get(item.id))
+          activeReminders.delete(item.id)
+        } else {
+          showNotification(item.title, `Reminder: ${item.type === 'task' ? 'Task' : 'Habit'} still pending!`)
+        }
+      }, item.reminder.intervalMinutes * 60000)
+      
+      activeReminders.set(item.id, interval)
+    }
+  })
+
+  // Cleanup reminders for items no longer needed or marked done
+  activeReminders.forEach((interval, id) => {
+    const item = itemsWithReminders.find(i => i.id === id)
+    if (!item) {
+      clearInterval(interval)
+      activeReminders.delete(id)
+    }
+  })
 }

@@ -29,6 +29,7 @@ const empty = (date) => ({
   dueTime: '',
   note: '',
   done: false,
+  reminder: { enabled: false, intervalMinutes: 60 },
   createdAt: new Date().toISOString(),
 })
 
@@ -38,12 +39,17 @@ export default function TaskModal({ open, task, defaultDate, onSave, onClose }) 
 
   useEffect(() => {
     if (open) {
-      setForm(task ? { priority: 'medium', ...task } : empty(defaultDate))
+      setForm(task ? { 
+        priority: 'medium', 
+        ...task, 
+        reminder: task.reminder || { enabled: false, intervalMinutes: 60 } 
+      } : empty(defaultDate))
       setError('')
     }
   }, [open, task, defaultDate])
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  const setReminder = (k, v) => setForm(f => ({ ...f, reminder: { ...f.reminder, [k]: v } }))
 
   const handleSave = () => {
     if (!form.title.trim()) { setError('Title is required'); return }
@@ -108,7 +114,7 @@ export default function TaskModal({ open, task, defaultDate, onSave, onClose }) 
                 onClick={() => set('category', c)}
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all border-2
                   ${form.category === c
-                    ? `${CAT_COLORS[c]} ring-2 border-transparent shadow-sm scale-105`
+                    ? `${CAT_COLORS[c]} ring-2 border-transparent shadow-sm scale-110`
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
               >
@@ -150,7 +156,7 @@ export default function TaskModal({ open, task, defaultDate, onSave, onClose }) 
               type="date"
               value={form.date}
               onChange={(e) => set('date', e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
             />
           </div>
           <div className="flex-1">
@@ -161,9 +167,59 @@ export default function TaskModal({ open, task, defaultDate, onSave, onClose }) 
               type="time"
               value={form.dueTime}
               onChange={(e) => set('dueTime', e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
             />
           </div>
+        </div>
+
+        {/* Reminder Section */}
+        <div className="mb-6 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Persistent Reminder</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alerts until completed</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer" 
+                checked={form.reminder?.enabled}
+                onChange={(e) => setReminder('enabled', e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+          
+          {form.reminder?.enabled && (
+            <div className="animate-[fade-in_0.2s_ease]">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Remind me every (minutes)</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="5"
+                  max="1440"
+                  value={form.reminder?.intervalMinutes}
+                  onChange={(e) => setReminder('intervalMinutes', parseInt(e.target.value) || 60)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+                />
+                <div className="flex gap-1">
+                  {[15, 60, 120, 1440].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setReminder('intervalMinutes', m)}
+                      className={`px-3 py-2 rounded-xl text-[10px] font-bold transition-all
+                        ${form.reminder?.intervalMinutes === m 
+                          ? 'bg-indigo-600 text-white' 
+                          : 'bg-white dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-700'}`}
+                    >
+                      {m >= 1440 ? '1d' : m >= 60 ? `${m/60}h` : `${m}m`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Note */}
@@ -175,8 +231,8 @@ export default function TaskModal({ open, task, defaultDate, onSave, onClose }) 
             value={form.note}
             onChange={(e) => set('note', e.target.value)}
             placeholder="Add a note…"
-            rows={3}
-            className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+            rows={2}
+            className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
           />
         </div>
 

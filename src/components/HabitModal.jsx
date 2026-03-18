@@ -17,8 +17,10 @@ const empty = () => ({
   id: uuidv4(),
   title: '',
   emoji: '🔥',
+  intervalDays: 1,
   targetValue: '',
   unit: '',
+  reminder: { enabled: false, intervalMinutes: 60 },
   createdAt: new Date().toISOString(),
 })
 
@@ -28,12 +30,17 @@ export default function HabitModal({ open, habit, onSave, onDelete, onClose }) {
 
   useEffect(() => {
     if (open) {
-      setForm(habit ? { ...habit } : empty())
+      setForm(habit ? { 
+        ...habit, 
+        intervalDays: habit.intervalDays || 1,
+        reminder: habit.reminder || { enabled: false, intervalMinutes: 60 } 
+      } : empty())
       setError('')
     }
   }, [open, habit])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setReminder = (k, v) => setForm(f => ({ ...f, reminder: { ...f.reminder, [k]: v } }))
 
   const handleSave = () => {
     if (!form.title.trim()) { setError('Title is required'); return }
@@ -71,7 +78,7 @@ export default function HabitModal({ open, habit, onSave, onDelete, onClose }) {
                   className="flex items-center gap-2 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all text-left group"
                 >
                   <span className="text-xl group-hover:scale-110 transition-transform">{p.emoji}</span>
-                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 leading-tight">{p.title}</span>
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">{p.title}</span>
                 </button>
               ))}
             </div>
@@ -90,23 +97,36 @@ export default function HabitModal({ open, habit, onSave, onDelete, onClose }) {
           {error && <p className="mt-1.5 text-xs text-rose-500 font-medium">{error}</p>}
         </div>
 
-        <div className="mb-5">
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Emoji Icon</label>
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {EMOJIS.map(e => (
-              <button
-                key={e}
-                onClick={() => set('emoji', e)}
-                className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all
-                  ${form.emoji === e ? 'bg-indigo-100 dark:bg-indigo-900 border-2 border-indigo-500 scale-110 shadow-sm' : 'bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:bg-slate-100'}`}
-              >
-                {e}
-              </button>
-            ))}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Repeat Every (Days)</label>
+            <input
+              type="number"
+              min="1"
+              max="30"
+              value={form.intervalDays}
+              onChange={(e) => set('intervalDays', parseInt(e.target.value) || 1)}
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Emoji Icon</label>
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar h-[46px]">
+              {EMOJIS.map(e => (
+                <button
+                  key={e}
+                  onClick={() => set('emoji', e)}
+                  className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all
+                    ${form.emoji === e ? 'bg-indigo-100 dark:bg-indigo-900 border-2 border-indigo-500 scale-110 shadow-sm' : 'bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:bg-slate-100'}`}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-3 mb-8">
+        <div className="flex gap-3 mb-5">
           <div className="flex-1">
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Goal (Value)</label>
             <input
@@ -127,6 +147,56 @@ export default function HabitModal({ open, habit, onSave, onDelete, onClose }) {
               className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
             />
           </div>
+        </div>
+
+        {/* Reminder Section */}
+        <div className="mb-8 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Persistent Reminder</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alerts until completed</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer" 
+                checked={form.reminder?.enabled}
+                onChange={(e) => setReminder('enabled', e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+          
+          {form.reminder?.enabled && (
+            <div className="animate-[fade-in_0.2s_ease]">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Remind me every (minutes)</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="5"
+                  max="1440"
+                  value={form.reminder?.intervalMinutes}
+                  onChange={(e) => setReminder('intervalMinutes', parseInt(e.target.value) || 60)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+                />
+                <div className="flex gap-1">
+                  {[15, 60, 120, 1440].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setReminder('intervalMinutes', m)}
+                      className={`px-3 py-2 rounded-xl text-[10px] font-bold transition-all
+                        ${form.reminder?.intervalMinutes === m 
+                          ? 'bg-indigo-600 text-white' 
+                          : 'bg-white dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-700'}`}
+                    >
+                      {m >= 1440 ? '1d' : m >= 60 ? `${m/60}h` : `${m}m`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">

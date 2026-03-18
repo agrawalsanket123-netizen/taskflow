@@ -99,3 +99,9 @@ export const logWeight = (entry) => {
 export const getNotificationPreference = () => localStorage.getItem(NOTIFICATIONS_KEY) === 'true'
 export const setNotificationPreference = (pref) => localStorage.setItem(NOTIFICATIONS_KEY, pref)
 
+export const getScheduledNotifications = () => parse('tf_notification_schedule', [])
+export const saveScheduledNotifications = (ids) => save('tf_notification_schedule', ids)
+
+export const getReminders = () => parse('tf_reminders', {})
+export const saveReminders = (reminders) => save('tf_reminders', reminders)
+

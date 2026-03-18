@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Plus, StickyNote } from 'lucide-react'
 import NoteCard from '../components/NoteCard'
 import NoteModal from '../components/NoteModal'
+import NoteViewModal from '../components/NoteViewModal'
 import { getNotes, addNote, updateNote, deleteNote } from '../utils/storage'
 
 export default function Notes() {
   const [notes, setNotes] = useState(() => getNotes().slice().reverse())
   const [modal, setModal] = useState({ open: false, note: null })
+  const [viewModal, setViewModal] = useState({ open: false, note: null })
 
   const refresh = () => setNotes(getNotes().slice().reverse())
 
@@ -39,6 +41,7 @@ export default function Notes() {
           <NoteCard
             key={note.id}
             note={note}
+            onClick={() => setViewModal({ open: true, note })}
             onEdit={(n) => setModal({ open: true, note: n })}
             onDelete={handleDelete}
           />
@@ -54,6 +57,13 @@ export default function Notes() {
       >
         <Plus size={24} strokeWidth={2.5} />
       </button>
+
+      <NoteViewModal
+        open={viewModal.open}
+        note={viewModal.note}
+        onEdit={(n) => setModal({ open: true, note: n })}
+        onClose={() => setViewModal({ open: false, note: null })}
+      />
 
       <NoteModal
         open={modal.open}

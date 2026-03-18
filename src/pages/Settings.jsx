@@ -87,7 +87,7 @@ export default function Settings() {
       </div>
 
       <div className="mt-12 text-center">
-        <p className="text-[10px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-[0.2em]">Designed with ❤️ for Productivity</p>
+        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em]">Designed with ❤️ for Productivity</p>
       </div>
     </div>
   )

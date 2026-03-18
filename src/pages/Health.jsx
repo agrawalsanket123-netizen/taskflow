@@ -7,25 +7,19 @@ import { todayStr, formatDateShort } from '../utils/dateHelpers'
 export default function Health() {
   const [weightInput, setWeightInput] = useState('')
   const [targetInput, setTargetInput] = useState(getTargetWeight())
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'))
 
-  const log = getWeightLog()
-  const target = parseFloat(targetInput) || 0
-
-  const refresh = () => setRefreshKey(k => k + 1)
-
-  const handleLogWeight = () => {
-    const w = parseFloat(weightInput)
-    if (isNaN(w) || w <= 0) return
-    logWeight({ date: todayStr(), weight: w })
-    setWeightInput('')
-    refresh()
-  }
-
-  const handleSaveTarget = () => {
-    saveTarget(targetInput)
-    refresh()
-  }
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          setIsDark(document.documentElement.classList.contains('dark'))
+        }
+      })
+    })
+    observer.observe(document.documentElement, { attributes: true })
+    return () => observer.disconnect()
+  }, [])
 
   const chartData = useMemo(() => {
     return log.map(entry => ({
@@ -43,6 +37,16 @@ export default function Health() {
     return { latest, first, diff, progress }
   }, [log, target, refreshKey])
 
+  const chartColors = {
+    stroke: isDark ? '#818cf8' : '#4f46e5',
+    grid: isDark ? '#334155' : '#e2e8f0',
+    axis: isDark ? '#94a3b8' : '#64748b',
+    tick: isDark ? '#cbd5e1' : '#1e293b',
+    tooltipBg: isDark ? '#1e293b' : '#ffffff',
+    tooltipBorder: isDark ? '#334155' : '#e2e8f0',
+    tooltipText: isDark ? '#f1f5f9' : '#0f172a'
+  }
+
   return (
     <div className="page-bg px-4 pt-6 pb-24 min-h-screen transition-colors">
       <div className="mb-6">
@@ -52,14 +56,14 @@ export default function Health() {
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Current Weight</label>
+          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Current Weight</label>
           <div className="flex items-end gap-1">
             <span className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats?.latest || '--'}</span>
             <span className="text-xs font-bold text-slate-400 mb-1">kg</span>
           </div>
         </div>
         <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Target Goal</label>
+          <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Target Goal</label>
           <div className="flex items-center gap-2">
             <input 
               type="number"
@@ -86,31 +90,31 @@ export default function Health() {
             )}
           </div>
           
-          <div className="h-48 w-full -ml-4 bg-white dark:bg-transparent rounded-2xl p-2">
+          <div className="h-48 w-full -ml-4 bg-transparent rounded-2xl p-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={1} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} opacity={1} />
                 <XAxis 
                   dataKey="formattedDate" 
-                  axisLine={{ stroke: '#94a3b8' }} 
+                  axisLine={{ stroke: chartColors.axis }} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 600 }}
+                  tick={{ fontSize: 10, fill: chartColors.tick, fontWeight: 600 }}
                   dy={10}
                 />
                 <YAxis 
                   hide 
-                  axisLine={{ stroke: '#94a3b8' }}
+                  axisLine={{ stroke: chartColors.axis }}
                   domain={['dataMin - 2', 'dataMax + 2']} 
                 />
                 <Tooltip 
                   contentStyle={{ 
                     borderRadius: '16px', 
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
+                    backgroundColor: chartColors.tooltipBg,
+                    border: `1px solid ${chartColors.tooltipBorder}`,
                     boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                     fontSize: '12px',
                     fontWeight: 'bold',
-                    color: '#0f172a'
+                    color: chartColors.tooltipText
                   }}
                   itemStyle={{ color: '#4f46e5' }}
                 />
@@ -120,9 +124,9 @@ export default function Health() {
                 <Line 
                   type="monotone" 
                   dataKey="weight" 
-                  stroke="#4f46e5" 
+                  stroke={chartColors.stroke} 
                   strokeWidth={4} 
-                  dot={{ r: 4, fill: '#4f46e5', strokeWidth: 2, stroke: '#fff' }}
+                  dot={{ r: 4, fill: chartColors.stroke, strokeWidth: 2, stroke: isDark ? '#1e293b' : '#fff' }}
                   activeDot={{ r: 6, strokeWidth: 0 }}
                   animationDuration={1000}
                 />
@@ -132,11 +136,11 @@ export default function Health() {
         </div>
       ) : (
         <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-10 mb-6 shadow-sm flex flex-col items-center justify-center text-center animate-[fade-in_0.3s_ease]">
-          <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4 text-slate-300 dark:text-slate-600">
+          <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4 text-slate-400 dark:text-slate-500">
             <TrendingDown size={24} />
           </div>
-          <p className="text-sm font-bold text-slate-400 dark:text-slate-500">No Weight Data Yet</p>
-          <p className="text-[11px] text-slate-300 dark:text-slate-600 mt-1">Your progress chart will appear once you log your first entry.</p>
+          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">No Weight Data Yet</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Your progress chart will appear once you log your first entry.</p>
         </div>
       )}
 
@@ -173,8 +177,14 @@ export default function Health() {
             <span className="text-[10px] font-bold uppercase tracking-wider">To Goal</span>
           </div>
           <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
-            {stats?.diff ? `${stats.diff < 0 ? '+' : ''}${Math.abs(stats.diff)}` : '--'}
-            <span className="text-xs ml-1">kg</span>
+            {stats?.latest && target > 0 ? (
+              (() => {
+                const diff = stats.latest - target
+                if (diff === 0) return "Goal Reached! ðŸŽ‰"
+                if (diff < 0) return `${diff.toFixed(1)} kg`
+                return `${diff.toFixed(1)} kg to go`
+              })()
+            ) : '--'}
           </p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">

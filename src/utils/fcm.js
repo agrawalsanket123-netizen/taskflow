@@ -1,4 +1,6 @@
-import { messaging, getToken, onMessage, VAPID_KEY } from '../firebase';
+import { messaging } from '../firebase'
+import { getToken, onMessage } from 'firebase/messaging'
+import { syncFcmToken } from './sync'
 
 // Request permission and get FCM token
 export async function requestNotificationPermission() {
@@ -6,11 +8,16 @@ export async function requestNotificationPermission() {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return null;
     
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-    if (token) {
-      localStorage.setItem('tf_fcm_token', token);
-      return token;
-    }
+    const currentToken = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
+    if (currentToken) {
+        console.log('FCM Token:', currentToken)
+        localStorage.setItem('tf_fcm_token', currentToken)
+        
+        // Sync token to Supabase
+        await syncFcmToken(currentToken)
+        
+        return currentToken
+      }
   } catch (err) {
     console.error('FCM token error:', err);
     return null;

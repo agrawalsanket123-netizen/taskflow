@@ -1,3 +1,8 @@
+import { 
+  syncTaskToSupabase, removeTaskFromSupabase, 
+  syncHabitToSupabase, removeHabitFromSupabase 
+} from './sync'
+
 // ── Storage keys ──────────────────────────────────────────
 const TASKS_KEY = 'tf_tasks'
 const NOTES_KEY = 'tf_notes'
@@ -28,15 +33,24 @@ export const getTasksForDate = (dateStr) =>
 export const addTask = (task) => {
   const tasks = getTasks()
   save(TASKS_KEY, [...tasks, task])
+  syncTaskToSupabase(task)
 }
 
 export const updateTask = (id, patch) => {
-  const tasks = getTasks().map((t) => (t.id === id ? { ...t, ...patch } : t))
+  const tasks = getTasks().map((t) => {
+    if (t.id === id) {
+      const updated = { ...t, ...patch }
+      syncTaskToSupabase(updated)
+      return updated
+    }
+    return t
+  })
   save(TASKS_KEY, tasks)
 }
 
 export const deleteTask = (id) => {
   save(TASKS_KEY, getTasks().filter((t) => t.id !== id))
+  removeTaskFromSupabase(id)
 }
 
 export const saveTasks = (tasks) => save(TASKS_KEY, tasks)
@@ -63,8 +77,14 @@ export const setTheme = (theme) => localStorage.setItem(THEME_KEY, theme)
 
 // ── Habits ────────────────────────────────────────────────
 export const getHabits = () => parse(HABITS_KEY)
-export const saveHabits = (habits) => save(HABITS_KEY, habits)
-export const addHabit = (habit) => save(HABITS_KEY, [...getHabits(), habit])
+export const saveHabits = (habits) => {
+  save(HABITS_KEY, habits)
+  habits.forEach(h => syncHabitToSupabase(h))
+}
+export const addHabit = (habit) => {
+  save(HABITS_KEY, [...getHabits(), habit])
+  syncHabitToSupabase(habit)
+}
 
 export const getHabitCompletions = () => parse(HABIT_COMPLETIONS_KEY, {})
 export const saveHabitCompletions = (completions) => save(HABIT_COMPLETIONS_KEY, completions)

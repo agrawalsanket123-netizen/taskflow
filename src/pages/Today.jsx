@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { Plus, CheckCircle2, Search, X as CloseIcon } from 'lucide-react'
 import TaskCard from '../components/TaskCard'
 import TaskModal from '../components/TaskModal'
+import { cancelNotification, stopPersistentReminder } from '../utils/fcm'
 import {
   getTasksForDate, addTask, updateTask, deleteTask,
 } from '../utils/storage'
@@ -24,7 +25,18 @@ export default function Today({ selectedDay, setSelectedDay }) {
   // When selectedDay changes, refresh tasks
   useState(() => { refresh() }, [dateStr])
 
-  const handleToggle = (id) => { updateTask(id, { done: !tasks.find(t => t.id === id)?.done }); refresh() }
+  const handleToggle = (id) => { 
+    const task = tasks.find(t => t.id === id)
+    const newDone = !task?.done
+    updateTask(id, { done: newDone })
+    
+    if (newDone) {
+      cancelNotification(id)
+      stopPersistentReminder(id)
+    }
+    
+    refresh() 
+  }
   const handleSave = (task) => {
     if (modal.task) updateTask(task.id, task)
     else addTask(task)

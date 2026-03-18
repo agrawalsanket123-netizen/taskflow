@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { todayStr } from '../utils/dateHelpers'
+import { scheduleNotification, schedulePersistentReminder } from '../utils/fcm'
 
 const CATEGORIES = ['work', 'personal', 'health', 'study']
 const CAT_LABELS = { work: 'Work', personal: 'Personal', health: 'Health', study: 'Study' }
@@ -53,7 +54,23 @@ export default function TaskModal({ open, task, defaultDate, onSave, onClose }) 
 
   const handleSave = () => {
     if (!form.title.trim()) { setError('Title is required'); return }
-    onSave({ ...form, title: form.title.trim() })
+    const savedTask = { ...form, title: form.title.trim() }
+    onSave(savedTask)
+
+    // Schedule Notification if dueTime is set
+    if (savedTask.dueTime) {
+      const [hours, minutes] = savedTask.dueTime.split(':')
+      const dueDateTime = new Date(savedTask.date)
+      dueDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+      
+      scheduleNotification(savedTask.id, savedTask.title, 'Task due now!', dueDateTime)
+    }
+
+    // Schedule Persistent Reminder
+    if (savedTask.reminder?.enabled) {
+      schedulePersistentReminder(savedTask.id, savedTask.title, savedTask.reminder.intervalMinutes)
+    }
+
     onClose()
   }
 

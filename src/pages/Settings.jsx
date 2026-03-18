@@ -1,25 +1,38 @@
 import { useState, useEffect } from 'react'
-import { Bell, BellOff, Settings as SettingsIcon, ShieldCheck, Info } from 'lucide-react'
+import { Bell, BellOff, Settings as SettingsIcon, ShieldCheck, Info, Copy, CheckCircle2 } from 'lucide-react'
 import { getNotificationPreference, setNotificationPreference } from '../utils/storage'
-import { requestNotificationPermission } from '../utils/notifications'
+import { requestNotificationPermission } from '../utils/fcm'
 
 export default function Settings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(getNotificationPreference())
   const [permissionStatus, setPermissionStatus] = useState(Notification.permission)
+  const [fcmToken, setFcmToken] = useState(localStorage.getItem('tf_fcm_token'))
+  const [copied, setCopied] = useState(false)
 
   const handleToggleNotifications = async () => {
     if (!notificationsEnabled) {
-      const status = await requestNotificationPermission()
+      const token = await requestNotificationPermission()
+      const status = Notification.permission
       setPermissionStatus(status)
-      if (status === 'granted') {
+      
+      if (status === 'granted' && token) {
         setNotificationsEnabled(true)
         setNotificationPreference(true)
+        setFcmToken(token)
       } else if (status === 'denied') {
-          alert('Notification permission denied. Please enable it in your browser settings to receive task reminders.')
+        alert('Notification permission denied. Please enable it in your browser settings to receive task reminders.')
       }
     } else {
       setNotificationsEnabled(false)
       setNotificationPreference(false)
+    }
+  }
+
+  const copyToken = () => {
+    if (fcmToken) {
+      navigator.clipboard.writeText(fcmToken)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -42,7 +55,7 @@ export default function Settings() {
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-800 dark:text-slate-100">Push Notifications</h4>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-[200px]">Get reminded when your tasks are due.</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-[200px]">Get real-time alerts even when the app is closed.</p>
                 </div>
               </div>
               <button 
@@ -56,11 +69,27 @@ export default function Settings() {
               </button>
             </div>
             
-            <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between text-xs font-medium">
-              <span className="text-slate-400">System Status</span>
-              <span className={`px-2.5 py-1 rounded-lg ${permissionStatus === 'granted' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                {permissionStatus.toUpperCase()}
-              </span>
+            <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 space-y-4">
+              <div className="flex items-center justify-between text-xs font-medium">
+                <span className="text-slate-400">System Status</span>
+                <span className={`px-2.5 py-1 rounded-lg ${permissionStatus === 'granted' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                  {permissionStatus.toUpperCase()}
+                </span>
+              </div>
+
+              {fcmToken && (
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">FCM Device Token</span>
+                    <button onClick={copyToken} className="text-indigo-500 hover:text-indigo-600 transition-colors">
+                      {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 break-all line-clamp-2">
+                    {fcmToken}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -78,8 +107,8 @@ export default function Settings() {
             <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300">
               <Info size={20} className="text-indigo-500" />
               <div className="text-xs">
-                <p className="font-bold">Version 2.0</p>
-                <p className="text-slate-400">Upgraded with Habits, Health, and Dark Mode.</p>
+                <p className="font-bold">Version 2.2</p>
+                <p className="text-slate-400">Powered by Firebase Push Notifications.</p>
               </div>
             </div>
           </div>

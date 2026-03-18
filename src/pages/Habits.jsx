@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Plus, Flame, Sparkles } from 'lucide-react'
+import { stopPersistentReminder } from '../utils/fcm'
 import { 
   getHabits, saveHabits, getHabitCompletions, toggleHabitCompletion 
 } from '../utils/storage'
@@ -19,7 +20,11 @@ export default function Habits() {
   const refresh = () => setRefreshKey(k => k + 1)
 
   const handleToggle = (id) => {
+    const isDone = !completions[`${id}_${today}`]
     toggleHabitCompletion(id, today)
+    if (isDone) {
+      stopPersistentReminder(id)
+    }
     refresh()
   }
 

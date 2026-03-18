@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Plus, Trash2 } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
+import { schedulePersistentReminder } from '../utils/fcm'
 
 const PRESETS = [
   { title: '10,000 Steps', emoji: '🚶', targetValue: 10000, unit: 'steps' },
@@ -44,7 +45,14 @@ export default function HabitModal({ open, habit, onSave, onDelete, onClose }) {
 
   const handleSave = () => {
     if (!form.title.trim()) { setError('Title is required'); return }
-    onSave({ ...form, title: form.title.trim() })
+    const savedHabit = { ...form, title: form.title.trim() }
+    onSave(savedHabit)
+
+    // Schedule Persistent Reminder
+    if (savedHabit.reminder?.enabled) {
+      schedulePersistentReminder(savedHabit.id, savedHabit.title, savedHabit.reminder.intervalMinutes)
+    }
+
     onClose()
   }
 

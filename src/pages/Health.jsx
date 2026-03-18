@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Heart, Plus, Target, TrendingDown, Scale } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { getWeightLog, logWeight, getTargetWeight, setTargetWeight as saveTarget } from '../utils/storage'

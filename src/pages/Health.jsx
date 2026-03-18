@@ -21,6 +21,25 @@ export default function Health() {
     return () => observer.disconnect()
   }, [])
 
+  const [refreshKey, setRefreshKey] = useState(0)
+  const log = getWeightLog()
+  const target = parseFloat(targetInput) || 0
+
+  const refresh = () => setRefreshKey(k => k + 1)
+
+  const handleLogWeight = () => {
+    const w = parseFloat(weightInput)
+    if (isNaN(w) || w <= 0) return
+    logWeight({ date: todayStr(), weight: w })
+    setWeightInput('')
+    refresh()
+  }
+
+  const handleSaveTarget = () => {
+    saveTarget(targetInput)
+    refresh()
+  }
+
   const chartData = useMemo(() => {
     return log.map(entry => ({
       ...entry,

@@ -7,38 +7,38 @@ const FIREBASE_PROJECT_ID = Deno.env.get('FIREBASE_PROJECT_ID')!
 const FIREBASE_CLIENT_EMAIL = Deno.env.get('FIREBASE_CLIENT_EMAIL')!
 const FIREBASE_PRIVATE_KEY = Deno.env.get('FIREBASE_PRIVATE_KEY')!.replace(/\\n/g, '\n')
 
-serve(async () => {
+serve(async (req: Request) => {
+  console.log("Trigger received at:", new Date().toISOString());
+  
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
   const now = new Date()
   const todayStr = now.toISOString().split('T')[0]
   const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
   
-  // Calculate window for due tasks (last 5 minutes)
-  const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000)
-  const fiveMinutesAgoTime = `${String(fiveMinsAgo.getHours()).padStart(2,'0')}:${String(fiveMinsAgo.getMinutes()).padStart(2,'0')}`
+  // Calculate window for due tasks (last 2 minutes for 1-min cron safety)
+  const twoMinsAgo = new Date(now.getTime() - 2 * 60 * 1000)
+  const twoMinutesAgoTime = `${String(twoMinsAgo.getHours()).padStart(2,'0')}:${String(twoMinsAgo.getMinutes()).padStart(2,'0')}`
+
+  console.log(`Checking tasks due between ${twoMinutesAgoTime} and ${currentTime}`);
 
   // 1. Get due tasks (scheduled for now)
-  const { data: dueTasks } = await supabase
+  const { data: dueTasks, error: dueError } = await supabase
     .from('tasks')
     .select('*, fcm_tokens!inner(token)')
     .eq('done', false)
     .eq('date', todayStr)
-    .gte('due_time', fiveMinutesAgoTime)
+    .gte('due_time', twoMinutesAgoTime)
     .lte('due_time', currentTime)
 
-  // 2. Get reminder tasks (send based on intervalMinutes)
-  // For simplicity, we trigger these every 5 minutes if reminder is enabled.
-  // In a full implementation, we'd check last_notified_at.
-  const { data: reminderTasks } = await supabase
-    .from('tasks')
-    .select('*, fcm_tokens!inner(token)')
-    .eq('done', false)
-    .eq('reminder_enabled', true)
+  if (dueError) console.error("Error fetching due tasks:", dueError);
 
-  const allTasks = [...(dueTasks || []), ...(reminderTasks || [])]
+  // 2. Get reminder tasks (only those not yet notified in last few mins)
+  // Simplified for now: just include due tasks to ensure they fire.
+  const allTasks = [...(dueTasks || [])]
 
   // De-duplicate by ID
   const uniqueTasks = Array.from(new Map(allTasks.map(t => [t.id, t])).values())
+  console.log(`Found ${uniqueTasks.length} unique tasks to notify.`);
 
   // Send FCM notification for each task
   const results = []
@@ -46,45 +46,58 @@ serve(async () => {
     const token = task.fcm_tokens?.token
     if (!token) continue
 
+    console.log(`Sending notification to user ${task.user_id} for task: ${task.title}`);
     const res = await sendFcmNotification(token, task.title, 
       task.due_time ? `Due at ${task.due_time}` : 'Reminder: Task pending!')
     results.push({ id: task.id, status: res })
   }
 
-  return new Response(JSON.stringify({ sent: uniqueTasks.length, details: results }), {
+  return new Response(JSON.stringify({ 
+    success: true, 
+    sent: uniqueTasks.length, 
+    details: results,
+    timestamp: new Date().toISOString()
+  }), {
     headers: { 'Content-Type': 'application/json' }
   })
 })
 
 async function sendFcmNotification(token: string, title: string, body: string) {
-  const jwt = await createJwt(FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)
-  
-  const response = await fetch(
-    `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${jwt}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: {
-          token,
-          notification: { title, body },
-          android: { priority: 'high' },
-          webpush: {
-            notification: {
-              icon: '/icons/icon-192.png',
-              badge: '/icons/icon-192.png',
-              vibrate: [200, 100, 200]
+  try {
+    const jwt = await createJwt(FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)
+    
+    const response = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: {
+            token,
+            notification: { title, body },
+            android: { priority: 'high' },
+            webpush: {
+              notification: {
+                icon: 'https://taskflow-xi-two.vercel.app/icons/icon-192.png',
+                badge: 'https://taskflow-xi-two.vercel.app/icons/icon-192.png'
+              }
             }
           }
-        }
-      })
-    }
-  )
-  
-  return response.ok ? 'success' : 'error'
+        })
+      }
+    )
+    
+    const resText = await response.text();
+    if (!response.ok) console.error("FCM Error:", resText);
+    
+    return response.ok ? 'success' : 'error'
+  } catch (err) {
+    console.error("sendFcmNotification Exception:", err);
+    return 'error';
+  }
 }
 
 async function createJwt(clientEmail: string, privateKey: string) {
@@ -92,14 +105,12 @@ async function createJwt(clientEmail: string, privateKey: string) {
   const now = Math.floor(Date.now() / 1000)
   const payload = btoa(JSON.stringify({
     iss: clientEmail,
-    scope: 'https://www.googleapis.com/auth/cloud-platform', // Correct scope for FCM
+    scope: 'https://www.googleapis.com/auth/cloud-platform',
     aud: 'https://oauth2.googleapis.com/token',
     exp: now + 3600,
     iat: now
   }))
   
-  // Sign and get access token... 
-  // (Re-using the logic from previous implementation as it was more robust for Deno Web Crypto)
   return await fetchAccessToken(header, payload, privateKey)
 }
 

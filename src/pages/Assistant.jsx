@@ -107,9 +107,9 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
         }
       ]
 
-      // Only send the last 6 valid messages to preserve token limits
+      // Only send the last 2 valid messages to preserve aggressive 6k token limits
       const validMessages = newMessages.filter(m => !m.content.startsWith('**Error:**'))
-      const recentMessages = validMessages.slice(-6)
+      const recentMessages = validMessages.slice(-2)
       const apiMessages = [systemPrompt, ...recentMessages.map(m => ({ role: m.role, content: m.content }))]
 
       const selectedModel = getGroqModel()
@@ -119,7 +119,7 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
         messages: apiMessages,
         tools: tools,
         tool_choice: "auto",
-        max_tokens: 2048
+        max_tokens: 1500
       })
 
       const responseMessage = runResponse.choices[0].message

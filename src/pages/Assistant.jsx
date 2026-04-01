@@ -210,7 +210,9 @@ CRITICAL LIMITS: To avoid output limits, do NOT schedule more than 14 tasks in a
       let friendlyError = `⚠️ **AI Connection Error**\n\nSomething went wrong connecting to the AI. Check your internet or API key in Settings.`
       
       if (errStr.includes('429') || errStr.includes('Rate limit') || errStr.includes('tokens per minute')) {
-        friendlyError = `⏳ **Speed Limit Reached!**\n\nThe AI hit its free-tier limit. Please wait about 30 seconds, then tap **CLEAR** and try asking for a smaller chunk (e.g., "Schedule Week 1").`
+        const timeMatch = errStr.match(/try again in ([0-9.]+)s/)
+        const waitTime = timeMatch ? Math.ceil(parseFloat(timeMatch[1])) : 30
+        friendlyError = `⏳ **Speed Limit Reached!**\n\nThe AI hit its free-tier speed limit. Groq's servers require you to wait **exactly ${waitTime} seconds** before sending another message. \n\nTapping CLEAR deletes the conversational history so your tokens stay low, but you still must wait out the clock!`
       } else if (errStr.includes('400') || errStr.includes('tool call validation failed') || errStr.includes('failed_generation')) {
         friendlyError = `🤯 **AI formatting hiccup!**\n\nThe AI stumbled while trying to schedule such a massive block of tasks at once. Try asking it to schedule just **one week** at a time!`
       } else if (errStr.includes('413')) {

@@ -58,8 +58,13 @@ Current Date: ${todayStr()}
 Context of user's current tasks (ID, Title, Date, Completed, Priority):
 ${JSON.stringify(getTasks().map(t => ({ id: t.id, title: t.title, date: t.date, completed: t.completed, priority: t.priority })))}
 
-You are equipped with tools to schedule and reschedule tasks. When a user agrees to a plan or asks you to schedule items, call the relevant tool to add them to their calendar.
-CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single response. If the user requests a full month, schedule the first 2 weeks and ask if they are ready for the rest. Keep task notes very concise.`
+You are equipped with tools to schedule and reschedule tasks. 
+CRITICAL TOOL INSTRUCTIONS:
+Always use the tools exactly according to their schema. If you use 'create_tasks', your output MUST perfectly match this internal syntax natively expected by the system:
+<function=create_tasks>{"tasks": [{"title": "Example", "date": "2026-04-10", "priority": "high", "category": "health", "note": "Notes here."}]}</function>
+DO NOT forget the {"tasks": [...]} object wrapper. DO NOT use malformed tags like <function=create_tasks=[...]>!
+
+CRITICAL LIMITS: To avoid output limits, do NOT schedule more than 14 tasks in a single response. If the user requests a full month, schedule the first 2 weeks and ask if they are ready for the rest. Keep task notes very concise.`
       }
 
       const tools = [
@@ -137,66 +142,62 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
       if (responseMessage.tool_calls) {
         setMessages(prev => [...prev, { role: 'assistant', content: "I'm scheduling these tasks for you right now..." }])
         
-        let toolResults = []
+        let totalCreated = 0
+        let totalUpdated = 0
+
         for (const toolCall of responseMessage.tool_calls) {
           if (toolCall.function.name === 'create_tasks') {
-            const args = JSON.parse(toolCall.function.arguments)
-            let count = 0
-            args.tasks.forEach(task => {
-              addTask({
-                id: uuidv4(),
-                title: task.title,
-                date: task.date,
-                priority: task.priority.toLowerCase(),
-                category: ['work', 'personal', 'health', 'study'].includes((task.category || '').toLowerCase()) ? task.category.toLowerCase() : 'personal',
-                completed: false,
-                hasTime: false,
-                time: '',
-                note: task.note || 'Scheduled by TaskFlow AI',
-                subtasks: [],
-                reminder: false
-              })
-              count++
-            })
-            toolResults.push({
-              tool_call_id: toolCall.id,
-              role: "tool",
-              name: "create_tasks",
-              content: `Successfully created ${count} tasks.`
-            })
+            try {
+              const args = JSON.parse(toolCall.function.arguments)
+              if (args.tasks && Array.isArray(args.tasks)) {
+                args.tasks.forEach(task => {
+                  addTask({
+                    id: uuidv4(),
+                    title: task.title,
+                    date: task.date,
+                    priority: task.priority?.toLowerCase() || 'medium',
+                    category: ['work', 'personal', 'health', 'study'].includes((task.category || '').toLowerCase()) ? task.category.toLowerCase() : 'personal',
+                    completed: false,
+                    hasTime: false,
+                    time: '',
+                    note: task.note || 'Scheduled by TaskFlow AI',
+                    subtasks: [],
+                    reminder: false
+                  })
+                  totalCreated++
+                })
+              }
+            } catch (err) {
+              console.error("Tool parse error:", err)
+            }
           } else if (toolCall.function.name === 'reschedule_tasks') {
-            const args = JSON.parse(toolCall.function.arguments)
-            let count = 0
-            args.updates.forEach(update => {
-              updateTask(update.id, { date: update.date })
-              count++
-            })
-            toolResults.push({
-              tool_call_id: toolCall.id,
-              role: "tool",
-              name: "reschedule_tasks",
-              content: `Successfully rescheduled ${count} tasks.`
-            })
+            try {
+              const args = JSON.parse(toolCall.function.arguments)
+              if (args.updates && Array.isArray(args.updates)) {
+                args.updates.forEach(update => {
+                  updateTask(update.id, { date: update.date })
+                  totalUpdated++
+                })
+              }
+            } catch (err) {
+              console.error("Tool parse error:", err)
+            }
           }
         }
 
-        // Call API again with tool results to get the final conversational response
-        const messagesWithToolResponse = [
-          ...apiMessages,
-          responseMessage,
-          ...toolResults
-        ]
-
-        const secondResponse = await groq.chat.completions.create({
-          model: selectedModel,
-          messages: messagesWithToolResponse,
-        })
-        
-        // Replace temporary scheduling message with real response
+        // We completely skip the second LLM API call to save 50% of tokens and prevent Double-Hop Rate Limiting!
         setMessages(prev => {
           const updated = [...prev]
           updated.pop()
-          return [...updated, { role: 'assistant', content: secondResponse.choices[0].message.content }]
+          const actionText = []
+          if (totalCreated > 0) actionText.push(`created ${totalCreated} new tasks`)
+          if (totalUpdated > 0) actionText.push(`rescheduled ${totalUpdated} tasks`)
+          
+          if (actionText.length > 0) {
+            return [...updated, { role: 'assistant', content: `✅ Successfully ${actionText.join(' and ')} on your calendar! Let me know if you need to schedule anything else.` }]
+          } else {
+            return [...updated, { role: 'assistant', content: `⚠️ I tried to schedule tasks but validation failed. Could you try asking me to schedule just a few tasks at a time?` }]
+          }
         })
 
       } else {
@@ -205,7 +206,18 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
 
     } catch (error) {
       console.error(error)
-      setMessages(prev => [...prev, { role: 'assistant', content: `**Error:** Let's double check your Groq API key in Settings. \`\`\`${error.message}\`\`\`` }])
+      const errStr = error.message || ''
+      let friendlyError = `⚠️ **AI Connection Error**\n\nSomething went wrong connecting to the AI. Check your internet or API key in Settings.`
+      
+      if (errStr.includes('429') || errStr.includes('Rate limit') || errStr.includes('tokens per minute')) {
+        friendlyError = `⏳ **Speed Limit Reached!**\n\nThe AI hit its free-tier limit. Please wait about 30 seconds, then tap **CLEAR** and try asking for a smaller chunk (e.g., "Schedule Week 1").`
+      } else if (errStr.includes('400') || errStr.includes('tool call validation failed') || errStr.includes('failed_generation')) {
+        friendlyError = `🤯 **AI formatting hiccup!**\n\nThe AI stumbled while trying to schedule such a massive block of tasks at once. Try asking it to schedule just **one week** at a time!`
+      } else if (errStr.includes('413')) {
+        friendlyError = `📉 **Message too large!**\n\nYour history is too long for this specific model. Tap **CLEAR** and try again.`
+      }
+
+      setMessages(prev => [...prev, { role: 'assistant', content: friendlyError }])
     } finally {
       setIsTyping(false)
       setCooldown(15) // Apply 15s cooldown after every API request completes

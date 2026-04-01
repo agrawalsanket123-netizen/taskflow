@@ -58,7 +58,8 @@ Context of user's current tasks (ID, Title, Date, Completed, Priority):
 ${JSON.stringify(getTasks().map(t => ({ id: t.id, title: t.title, date: t.date, completed: t.completed, priority: t.priority })))}
 
 You are equipped with tools to schedule and reschedule tasks. 
-CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks in a single response under any circumstances. If the user requests a full month, strictly schedule the first 14 days and ask if they are ready to schedule the rest. Note descriptions must be very concise.`
+CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks in a single response under any circumstances. If the user requests a full month, strictly schedule the first 14 days and ask if they are ready to schedule the rest. Note descriptions must be very concise.
+IMPORTANT: If the user explicitly asks to "add this to my notes", they mean the 'note' parameter of the tasks you are creating/updating. Do NOT create a standalone task titled "Notes". If the user shares a personal fact (e.g., "My name is Sanket"), simply acknowledge it in chat—do not create a calendar task for it!`
 
       const tools = [
         {
@@ -88,8 +89,8 @@ CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks
               }
             },
             {
-              name: "reschedule_tasks",
-              description: "Updates the scheduled date for existing tasks.",
+              name: "update_tasks",
+              description: "Updates any properties of existing tasks.",
               parameters: {
                 type: SchemaType.OBJECT,
                 properties: {
@@ -98,10 +99,14 @@ CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks
                     items: {
                       type: SchemaType.OBJECT,
                       properties: {
-                        id: { type: SchemaType.STRING, description: "The existing task id to reschedule" },
-                        date: { type: SchemaType.STRING, description: "YYYY-MM-DD new date string" }
+                        id: { type: SchemaType.STRING, description: "The existing task id to update" },
+                        title: { type: SchemaType.STRING, description: "New title (optional)" },
+                        date: { type: SchemaType.STRING, description: "YYYY-MM-DD new date (optional)" },
+                        priority: { type: SchemaType.STRING, description: "high, medium, low (optional)" },
+                        category: { type: SchemaType.STRING, description: "work, personal, health, study (optional)" },
+                        note: { type: SchemaType.STRING, description: "Appended or new notes (optional)" }
                       },
-                      required: ["id", "date"]
+                      required: ["id"]
                     }
                   }
                 },
@@ -172,12 +177,19 @@ CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks
             } catch (err) {
               console.error("Tool parse error:", err)
             }
-          } else if (call.name === 'reschedule_tasks') {
+          } else if (call.name === 'update_tasks' || call.name === 'reschedule_tasks') {
             try {
               const args = call.args;
               if (args.updates && Array.isArray(args.updates)) {
                 args.updates.forEach(update => {
-                  updateTask(update.id, { date: update.date })
+                  const payload = {}
+                  if (update.title) payload.title = update.title
+                  if (update.date) payload.date = update.date
+                  if (update.priority) payload.priority = update.priority.toLowerCase()
+                  if (update.category) payload.category = update.category.toLowerCase()
+                  if (update.note) payload.note = update.note
+                  
+                  updateTask(update.id, payload)
                   totalUpdated++
                 })
               }

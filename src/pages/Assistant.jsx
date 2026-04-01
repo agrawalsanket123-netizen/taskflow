@@ -49,7 +49,8 @@ Current Date: ${todayStr()}
 Context of user's current tasks (ID, Title, Date, Completed, Priority):
 ${JSON.stringify(getTasks().map(t => ({ id: t.id, title: t.title, date: t.date, completed: t.completed, priority: t.priority })))}
 
-You are equipped with tools to schedule and reschedule tasks. When a user agrees to a plan or asks you to schedule items, call the relevant tool to add them to their calendar.`
+You are equipped with tools to schedule and reschedule tasks. When a user agrees to a plan or asks you to schedule items, call the relevant tool to add them to their calendar.
+CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single response. If the user requests a full month, schedule the first 2 weeks and ask if they are ready for the rest. Keep task notes very concise.`
       }
 
       const tools = [

@@ -107,8 +107,9 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
         }
       ]
 
-      // Only send the last 4 messages to preserve Groq API token limits
-      const recentMessages = newMessages.slice(-4)
+      // Only send the last 6 valid messages to preserve token limits
+      const validMessages = newMessages.filter(m => !m.content.startsWith('**Error:**'))
+      const recentMessages = validMessages.slice(-6)
       const apiMessages = [systemPrompt, ...recentMessages.map(m => ({ role: m.role, content: m.content }))]
 
       let runResponse = await groq.chat.completions.create({

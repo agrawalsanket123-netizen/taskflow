@@ -12,6 +12,8 @@ const HABIT_COMPLETIONS_KEY = 'tf_habit_completions'
 const TARGET_WEIGHT_KEY = 'tf_target_weight'
 const WEIGHT_LOG_KEY = 'tf_weight_log'
 const NOTIFICATIONS_KEY = 'tf_notifications'
+const GROQ_API_KEY = 'tf_groq_api_key'
+const CHAT_HISTORY_KEY = 'tf_chat_history'
 
 // ── Helpers ───────────────────────────────────────────────
 const parse = (key, fallback = []) => {
@@ -125,3 +127,9 @@ export const saveScheduledNotifications = (ids) => save('tf_notification_schedul
 export const getReminders = () => parse('tf_reminders', {})
 export const saveReminders = (reminders) => save('tf_reminders', reminders)
 
+// ── AI Assistant ──────────────────────────────────────────
+export const getGroqApiKey = () => localStorage.getItem(GROQ_API_KEY) || ''
+export const setGroqApiKey = (key) => localStorage.setItem(GROQ_API_KEY, key)
+
+export const getChatHistory = () => parse(CHAT_HISTORY_KEY, [])
+export const saveChatHistory = (history) => save(CHAT_HISTORY_KEY, history)

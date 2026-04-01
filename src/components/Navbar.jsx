@@ -1,4 +1,4 @@
-import { CalendarDays, LayoutGrid, StickyNote, Flame, Heart, Settings } from 'lucide-react'
+import { CalendarDays, LayoutGrid, StickyNote, Flame, Heart, Settings, Bot } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const tabs = [
@@ -7,6 +7,7 @@ const tabs = [
   { to: '/habits', label: 'Habits', icon: Flame },
   { to: '/health', label: 'Health', icon: Heart },
   { to: '/notes', label: 'Notes', icon: StickyNote },
+  { to: '/assistant', label: 'AI', icon: Bot },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -21,7 +22,7 @@ export default function Navbar() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all duration-200 min-w-[50px] relative
+                `flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all duration-200 min-w-[45px] relative
                 ${isActive
                   ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
                   : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'

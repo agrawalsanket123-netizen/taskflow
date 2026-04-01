@@ -33,9 +33,15 @@ export async function removeTaskFromSupabase(taskId) {
 // Sync FCM token to Supabase
 export async function syncFcmToken(token) {
   const userId = getUserId()
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const { error } = await supabase
     .from('fcm_tokens')
-    .upsert({ user_id: userId, token, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    .upsert({ 
+      user_id: userId, 
+      token, 
+      timezone,
+      updated_at: new Date().toISOString() 
+    }, { onConflict: 'user_id' })
   
   if (error) console.error('Token sync error:', error)
 }

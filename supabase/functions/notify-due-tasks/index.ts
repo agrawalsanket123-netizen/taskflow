@@ -8,56 +8,84 @@ const FIREBASE_CLIENT_EMAIL = Deno.env.get('FIREBASE_CLIENT_EMAIL')!
 const FIREBASE_PRIVATE_KEY = Deno.env.get('FIREBASE_PRIVATE_KEY')!.replace(/\\n/g, '\n')
 
 serve(async (req: Request) => {
-  console.log("Trigger received at:", new Date().toISOString());
-  
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  const now = new Date()
-  const todayStr = now.toISOString().split('T')[0]
-  const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
   
-  // Calculate window for due tasks (last 2 minutes for 1-min cron safety)
-  const twoMinsAgo = new Date(now.getTime() - 2 * 60 * 1000)
-  const twoMinutesAgoTime = `${String(twoMinsAgo.getHours()).padStart(2,'0')}:${String(twoMinsAgo.getMinutes()).padStart(2,'0')}`
-
-  console.log(`Checking tasks due between ${twoMinutesAgoTime} and ${currentTime}`);
-
-  // 1. Get due tasks (scheduled for now)
-  const { data: dueTasks, error: dueError } = await supabase
-    .from('tasks')
-    .select('*, fcm_tokens!inner(token)')
-    .eq('done', false)
-    .eq('date', todayStr)
-    .gte('due_time', twoMinutesAgoTime)
-    .lte('due_time', currentTime)
-
-  if (dueError) console.error("Error fetching due tasks:", dueError);
-
-  // 2. Get reminder tasks (only those not yet notified in last few mins)
-  // Simplified for now: just include due tasks to ensure they fire.
-  const allTasks = [...(dueTasks || [])]
-
-  // De-duplicate by ID
-  const uniqueTasks = Array.from(new Map(allTasks.map(t => [t.id, t])).values())
-  console.log(`Found ${uniqueTasks.length} unique tasks to notify.`);
-
-  // Send FCM notification for each task
-  const results = []
-  for (const task of uniqueTasks) {
-    const token = task.fcm_tokens?.token
-    if (!token) continue
-
-    console.log(`Sending notification to user ${task.user_id} for task: ${task.title}`);
-    const res = await sendFcmNotification(token, task.title, 
-      task.due_time ? `Due at ${task.due_time}` : 'Reminder: Task pending!')
-    results.push({ id: task.id, status: res })
+  async function logToDB(message: string, details: any = {}) {
+    await supabase.from('debug_logs').insert({ message, details })
+    console.log(message, details)
   }
 
-  return new Response(JSON.stringify({ 
-    success: true, 
-    sent: uniqueTasks.length, 
-    details: results,
-    timestamp: new Date().toISOString()
-  }), {
+  await logToDB("V5 Trigger started.");
+
+  // 1. Get all active FCM tokens and their timezones
+  const { data: userTokens, error: tokenError } = await supabase
+    .from('fcm_tokens')
+    .select('user_id, token, timezone')
+    .not('token', 'is', null)
+
+  if (tokenError) {
+    await logToDB("Error fetching tokens", tokenError);
+    return new Response(JSON.stringify({ error: tokenError.message }), { status: 500 });
+  }
+
+  await logToDB(`Processing ${userTokens?.length || 0} users.`);
+
+  const notificationsSent = []
+  
+  for (const ut of userTokens || []) {
+    const { user_id, token, timezone = 'UTC' } = ut;
+    
+    // Calculate local time for this user
+    const formatterDate = new Intl.DateTimeFormat('en-CA', { // YYYY-MM-DD
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const formatterTime = new Intl.DateTimeFormat('en-GB', { // HH:mm
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const now = new Date();
+    const localTodayStr = formatterDate.format(now);
+    const localTimeStr = formatterTime.format(now);
+    
+    const twoMinsAgo = new Date(now.getTime() - 2 * 60 * 1000);
+    const localTimeAgoStr = formatterTime.format(twoMinsAgo);
+
+    await logToDB(`User check ${user_id}`, { timezone, localTodayStr, localTimeAgoStr, localTimeStr });
+
+    // 2. Query due tasks for this user in their local time
+    const { data: tasks, error: taskError } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', user_id)
+      .eq('done', false)
+      .eq('date', localTodayStr)
+      .gte('due_time', localTimeAgoStr)
+      .lte('due_time', localTimeStr)
+
+    if (taskError) {
+      await logToDB(`Error fetching tasks for ${user_id}`, taskError);
+      continue;
+    }
+
+    if (tasks && tasks.length > 0) {
+      await logToDB(`DUE TASKS FOUND for ${user_id}`, { count: tasks.length, tasks: tasks.map(t => t.title) });
+      for (const task of tasks) {
+        const result = await sendFcmNotification(token, task.title, `Due at ${task.due_time}`);
+        await logToDB(`FCM Result for ${task.id}`, { result });
+        notificationsSent.push({ task_id: task.id, user_id, status: result });
+      }
+    } else {
+        await logToDB(`No due tasks for ${user_id} in window.`);
+    }
+  }
+
+  return new Response(JSON.stringify({ success: true, sent: notificationsSent.length }), {
     headers: { 'Content-Type': 'application/json' }
   })
 })
@@ -91,12 +119,15 @@ async function sendFcmNotification(token: string, title: string, body: string) {
     )
     
     const resText = await response.text();
-    if (!response.ok) console.error("FCM Error:", resText);
+    if (!response.ok) {
+        console.error("FCM Send Error:", resText);
+        return `error: ${resText}`;
+    }
     
-    return response.ok ? 'success' : 'error'
+    return 'success'
   } catch (err) {
     console.error("sendFcmNotification Exception:", err);
-    return 'error';
+    return `exception: ${err}`;
   }
 }
 

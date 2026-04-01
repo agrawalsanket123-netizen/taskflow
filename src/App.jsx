@@ -7,6 +7,7 @@ import Week from './pages/Week'
 import Habits from './pages/Habits'
 import Health from './pages/Health'
 import Notes from './pages/Notes'
+import Assistant from './pages/Assistant'
 import Settings from './pages/Settings'
 import { todayStr } from './utils/dateHelpers'
 import { getTheme } from './utils/storage'
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/habits" element={<Habits />} />
           <Route path="/health" element={<Health />} />
           <Route path="/notes" element={<Notes />} />
+          <Route path="/assistant" element={<Assistant />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
         <Navbar />

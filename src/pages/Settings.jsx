@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Bell, BellOff, Settings as SettingsIcon, ShieldCheck, Info, Copy, CheckCircle2 } from 'lucide-react'
-import { getNotificationPreference, setNotificationPreference } from '../utils/storage'
+import { getNotificationPreference, setNotificationPreference, getGroqApiKey, setGroqApiKey } from '../utils/storage'
 import { requestNotificationPermission } from '../utils/fcm'
+import { Bot } from 'lucide-react'
 
 export default function Settings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(getNotificationPreference())
   const [permissionStatus, setPermissionStatus] = useState(Notification.permission)
   const [fcmToken, setFcmToken] = useState(localStorage.getItem('tf_fcm_token'))
   const [copied, setCopied] = useState(false)
+  const [groqKey, setGroqKey] = useState(getGroqApiKey())
+
+  const handleSaveGroqKey = (e) => {
+    const val = e.target.value
+    setGroqKey(val)
+    setGroqApiKey(val)
+  }
 
   const handleToggleNotifications = async () => {
     if (!notificationsEnabled) {
@@ -95,6 +103,28 @@ export default function Settings() {
         </section>
 
         <section>
+          <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-1">AI Integration</h3>
+          <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 flex items-center justify-center shrink-0">
+                <Bot size={20} />
+              </div>
+              <div className="w-full">
+                <p className="font-bold text-sm text-slate-800 dark:text-slate-100 mb-1">Groq API Key</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">Required for TaskFlow AI. Your key is stored locally and never shared.</p>
+                <input
+                  type="password"
+                  value={groqKey}
+                  onChange={handleSaveGroqKey}
+                  placeholder="gsk_..."
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
           <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-1">About TaskFlow</h3>
           <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4">
             <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300">
@@ -107,8 +137,8 @@ export default function Settings() {
             <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300">
               <Info size={20} className="text-indigo-500" />
               <div className="text-xs">
-                <p className="font-bold">Version 2.2</p>
-                <p className="text-slate-400">Powered by Firebase Push Notifications.</p>
+                <p className="font-bold">Version 3.0</p>
+                <p className="text-slate-400">Powered by Groq & Llama 3.3 70B.</p>
               </div>
             </div>
           </div>

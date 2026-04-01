@@ -107,7 +107,9 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
         }
       ]
 
-      const apiMessages = [systemPrompt, ...newMessages.map(m => ({ role: m.role, content: m.content }))]
+      // Only send the last 4 messages to preserve Groq API token limits
+      const recentMessages = newMessages.slice(-4)
+      const apiMessages = [systemPrompt, ...recentMessages.map(m => ({ role: m.role, content: m.content }))]
 
       let runResponse = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",

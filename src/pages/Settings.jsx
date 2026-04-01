@@ -133,8 +133,8 @@ export default function Settings() {
                   }}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                 >
-                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Max Speed & High Limit)</option>
-                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Max Intelligence)</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Max Speed & High Limit)</option>
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (Max Intelligence)</option>
                 </select>
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function Settings() {
               <Info size={20} className="text-indigo-500" />
               <div className="text-xs">
                 <p className="font-bold">Version 3.0</p>
-                <p className="text-slate-400">Powered by Google Gemini 1.5.</p>
+                <p className="text-slate-400">Powered by Google Gemini 2.5.</p>
               </div>
             </div>
           </div>

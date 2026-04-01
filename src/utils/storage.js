@@ -132,7 +132,7 @@ export const saveReminders = (reminders) => save('tf_reminders', reminders)
 export const getGeminiApiKey = () => localStorage.getItem(GEMINI_API_KEY) || ''
 export const setGeminiApiKey = (key) => localStorage.setItem(GEMINI_API_KEY, key)
 
-export const getGeminiModel = () => localStorage.getItem(GEMINI_MODEL_KEY) || 'gemini-1.5-flash'
+export const getGeminiModel = () => localStorage.getItem(GEMINI_MODEL_KEY) || 'gemini-2.5-flash'
 export const setGeminiModel = (model) => localStorage.setItem(GEMINI_MODEL_KEY, model)
 
 export const getChatHistory = () => parse(CHAT_HISTORY_KEY, [])

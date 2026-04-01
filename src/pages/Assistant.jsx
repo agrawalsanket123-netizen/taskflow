@@ -240,7 +240,7 @@ CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks
         </div>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Welcome to TaskFlow AI</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-8">
-          Powered by Google Gemini 1.5, your assistant can completely break down your goals into actionable daily schedules.
+          Powered by Google Gemini 2.5, your assistant can completely break down your goals into actionable daily schedules.
         </p>
         <button 
           onClick={() => navigate('/settings')}
@@ -261,7 +261,7 @@ CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks
             AI Planner
             <Sparkles size={18} className="text-yellow-500" />
           </h1>
-          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase mt-1">Gemini 1.5</p>
+          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase mt-1">Gemini 2.5</p>
         </div>
         <button 
           onClick={() => {

@@ -47,10 +47,19 @@ export default function Assistant() {
     setIsTyping(true)
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey)
+      const currentApiKey = getGeminiApiKey()
       const selectedModelName = getGeminiModel()
 
-      const systemInstruction = `You are TaskFlow AI, an intelligent, positive, and proactive productivity assistant.
+      if (!currentApiKey) {
+        setMessages(prev => [...prev, { role: 'assistant', content: "🔑 **Missing API Key!**\n\nPlease go to **Settings** and add your free Google Gemini API key to start using the AI Planner." }])
+        setIsTyping(false)
+        return
+      }
+
+      const genAI = new GoogleGenerativeAI(currentApiKey)
+      
+      const systemInstruction = {
+        parts: [{ text: `You are TaskFlow AI, an intelligent, positive, and proactive productivity assistant.
 Your goal is to help the user break down their goals, organize their month/week, and schedule tasks effectively.
 Current Date: ${todayStr()}
 
@@ -59,7 +68,8 @@ ${JSON.stringify(getTasks().map(t => ({ id: t.id, title: t.title, date: t.date, 
 
 You are equipped with tools to schedule and reschedule tasks. 
 CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks in a single response under any circumstances. If the user requests a full month, strictly schedule the first 14 days and ask if they are ready to schedule the rest. Note descriptions must be very concise.
-IMPORTANT: If the user explicitly asks to "add this to my notes", they mean the 'note' parameter of the tasks you are creating/updating. Do NOT create a standalone task titled "Notes". If the user shares a personal fact (e.g., "My name is Sanket"), simply acknowledge it in chat—do not create a calendar task for it!`
+IMPORTANT: If the user explicitly asks to "add this to my notes", they mean the 'note' parameter of the tasks you are creating/updating. Do NOT create a standalone task titled "Notes". If the user shares a personal fact (e.g., "My name is Sanket"), simply acknowledge it in chat—do not create a calendar task for it!` }]
+      }
 
       const tools = [
         {
@@ -214,7 +224,13 @@ IMPORTANT: If the user explicitly asks to "add this to my notes", they mean the 
           }
         })
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: response.text() }])
+        let textResult = ""
+        try {
+          textResult = response.text()
+        } catch (e) {
+          textResult = "I've processed your request but couldn't generate a text summary. Please check your tasks for changes!"
+        }
+        setMessages(prev => [...prev, { role: 'assistant', content: textResult }])
       }
 
     } catch (error) {

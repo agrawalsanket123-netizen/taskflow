@@ -49,7 +49,7 @@ Current Date: ${todayStr()}
 Context of user's current tasks (ID, Title, Date, Completed, Priority):
 ${JSON.stringify(getTasks().map(t => ({ id: t.id, title: t.title, date: t.date, completed: t.completed, priority: t.priority })))}
 
-You have access to tools to create and reschedule tasks. When the user asks you to plan a routine or break down a goal, outline the plan, and use the \`create_tasks\` tool to add them directly to their calendar. If they missed tasks, you can use \`reschedule_tasks\` to move them.`
+You are equipped with tools to schedule and reschedule tasks. When a user agrees to a plan or asks you to schedule items, call the relevant tool to add them to their calendar.`
       }
 
       const tools = [
@@ -112,7 +112,7 @@ You have access to tools to create and reschedule tasks. When the user asks you 
         messages: apiMessages,
         tools: tools,
         tool_choice: "auto",
-        max_tokens: 1024
+        max_tokens: 4096
       })
 
       const responseMessage = runResponse.choices[0].message

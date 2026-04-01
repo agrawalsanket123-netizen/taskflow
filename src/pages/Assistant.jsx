@@ -66,9 +66,13 @@ Current Date: ${todayStr()}
 Context of user's current tasks (ID, Title, Date, Completed, Priority):
 ${JSON.stringify(getTasks().map(t => ({ id: t.id, title: t.title, date: t.date, completed: t.completed, priority: t.priority })))}
 
-You are equipped with tools to schedule and reschedule tasks. 
-CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks in a single response under any circumstances. If the user requests a full month, strictly schedule the first 14 days and ask if they are ready to schedule the rest. Note descriptions must be very concise.
-IMPORTANT: If the user explicitly asks to "add this to my notes", they mean the 'note' parameter of the tasks you are creating/updating. Do NOT create a standalone task titled "Notes". If the user shares a personal fact (e.g., "My name is Sanket"), simply acknowledge it in chat—do not create a calendar task for it!` }]
+You are equipped with tools to schedule tasks and create long-form notes.
+CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks in a single response. If the user requests a full month, schedule 14 days and ask if they want the rest.
+NOTES vs TASKS: 
+- Use **create_tasks** for actionable items with dates.
+- Use **create_note** for static information, goals, or observations (e.g., "Weight loss starting stats", "Vegetarian diet preferences", "My name is Sanket").
+- Use **update_tasks** to modify existing items.
+If the user says "add to my notes", and it's a general fact, use **create_note**.` }]
       }
 
       const tools = [
@@ -122,6 +126,19 @@ IMPORTANT: If the user explicitly asks to "add this to my notes", they mean the 
                 },
                 required: ["updates"]
               }
+            },
+            {
+              name: "create_note",
+              description: "Creates a permanent text note in the user's notebook.",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  title: { type: SchemaType.STRING, description: "Short title for the note" },
+                  content: { type: SchemaType.STRING, description: "Full content of the note" },
+                  color: { type: SchemaType.STRING, description: "Optional: blue, purple, yellow, green, pink" }
+                },
+                required: ["title", "content"]
+              }
             }
           ]
         }
@@ -161,9 +178,24 @@ IMPORTANT: If the user explicitly asks to "add this to my notes", they mean the 
         
         let totalCreated = 0
         let totalUpdated = 0
+        let totalNotes = 0
 
         for (const call of calls) {
-          if (call.name === 'create_tasks') {
+          if (call.name === 'create_note') {
+            try {
+              const args = call.args;
+              addNote({
+                id: uuidv4(),
+                title: args.title,
+                content: args.content,
+                color: args.color || 'blue',
+                date: new Date().toISOString()
+              })
+              totalNotes++
+            } catch (err) {
+              console.error("Note tool error:", err)
+            }
+          } else if (call.name === 'create_tasks') {
             try {
               const args = call.args; // natively object in Gemini SDK
               if (args.tasks && Array.isArray(args.tasks)) {
@@ -215,7 +247,8 @@ IMPORTANT: If the user explicitly asks to "add this to my notes", they mean the 
           updated.pop() // Remove temporary message
           const actionText = []
           if (totalCreated > 0) actionText.push(`created ${totalCreated} new tasks`)
-          if (totalUpdated > 0) actionText.push(`rescheduled ${totalUpdated} tasks`)
+          if (totalUpdated > 0) actionText.push(`updated ${totalUpdated} tasks`)
+          if (totalNotes > 0) actionText.push(`saved ${totalNotes} notes`)
           
           if (actionText.length > 0) {
             return [...updated, { role: 'assistant', content: `✅ Successfully ${actionText.join(' and ')} on your calendar! Let me know if you need to schedule anything else.` }]

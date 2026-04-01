@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Bell, BellOff, Settings as SettingsIcon, ShieldCheck, Info, Copy, CheckCircle2 } from 'lucide-react'
-import { getNotificationPreference, setNotificationPreference, getGroqApiKey, setGroqApiKey, getGroqModel, setGroqModel } from '../utils/storage'
+import { getNotificationPreference, setNotificationPreference, getGeminiApiKey, setGeminiApiKey, getGeminiModel, setGeminiModel } from '../utils/storage'
 import { requestNotificationPermission } from '../utils/fcm'
 import { Bot } from 'lucide-react'
 
@@ -9,13 +9,13 @@ export default function Settings() {
   const [permissionStatus, setPermissionStatus] = useState(Notification.permission)
   const [fcmToken, setFcmToken] = useState(localStorage.getItem('tf_fcm_token'))
   const [copied, setCopied] = useState(false)
-  const [groqKey, setGroqKey] = useState(getGroqApiKey())
-  const [groqModel, setGroqModelLocal] = useState(getGroqModel())
+  const [geminiKey, setGeminiKeyLocal] = useState(getGeminiApiKey())
+  const [geminiModel, setGeminiModelLocal] = useState(getGeminiModel())
 
-  const handleSaveGroqKey = (e) => {
+  const handleSaveGeminiKey = (e) => {
     const val = e.target.value
-    setGroqKey(val)
-    setGroqApiKey(val)
+    setGeminiKeyLocal(val)
+    setGeminiApiKey(val)
   }
 
   const handleToggleNotifications = async () => {
@@ -111,29 +111,30 @@ export default function Settings() {
                 <Bot size={20} />
               </div>
               <div className="w-full">
-                <p className="font-bold text-sm text-slate-800 dark:text-slate-100 mb-1">Groq API Key</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">Required for TaskFlow AI. Your key is stored locally and never shared.</p>
+                <p className="font-bold text-sm text-slate-800 dark:text-slate-100 mb-1">Google Gemini API Key</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">
+                  Required for TaskFlow AI. Get your free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:text-indigo-600 underline">Google AI Studio</a>.
+                </p>
                 <input
                   type="password"
-                  value={groqKey}
-                  onChange={handleSaveGroqKey}
-                  placeholder="gsk_..."
+                  value={geminiKey}
+                  onChange={handleSaveGeminiKey}
+                  placeholder="AIzaSy..."
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono mb-4"
                 />
                 <p className="font-bold text-sm text-slate-800 dark:text-slate-100 mb-1 mt-2">AI Model</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">Choose Llama 3.1 8B for much higher free rate limits.</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">Choose the Gemini model that powers your assistant.</p>
                 <select
-                  value={groqModel}
+                  value={geminiModel}
                   onChange={(e) => {
                     const val = e.target.value;
-                    setGroqModelLocal(val);
-                    setGroqModel(val);
+                    setGeminiModelLocal(val);
+                    setGeminiModel(val);
                   }}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                 >
-                  <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Max Intelligence)</option>
-                  <option value="llama-3.1-8b-instant">Llama 3.1 8B (Max Speed & High Limit)</option>
-                  <option value="mixtral-8x7b-32768">Mixtral 8x7B (Great for Long Contexts)</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Max Speed & High Limit)</option>
+                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Max Intelligence)</option>
                 </select>
               </div>
             </div>
@@ -154,7 +155,7 @@ export default function Settings() {
               <Info size={20} className="text-indigo-500" />
               <div className="text-xs">
                 <p className="font-bold">Version 3.0</p>
-                <p className="text-slate-400">Powered by Groq & Llama 3.3 70B.</p>
+                <p className="text-slate-400">Powered by Google Gemini 1.5.</p>
               </div>
             </div>
           </div>

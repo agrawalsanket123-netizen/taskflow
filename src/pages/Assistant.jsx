@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Bot, Send, Sparkles, Loader2, ArrowRight } from 'lucide-react'
-import Groq from 'groq-sdk'
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { v4 as uuidv4 } from 'uuid'
-import { getGroqApiKey, getGroqModel, getChatHistory, saveChatHistory, getTasks, addTask, updateTask } from '../utils/storage'
+import { getGeminiApiKey, getGeminiModel, getChatHistory, saveChatHistory, getTasks, addTask, updateTask } from '../utils/storage'
 import { todayStr } from '../utils/dateHelpers'
 import { useNavigate } from 'react-router-dom'
 
@@ -13,7 +13,7 @@ export default function Assistant() {
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [cooldown, setCooldown] = useState(0)
-  const [apiKey, setApiKey] = useState(getGroqApiKey())
+  const [apiKey] = useState(getGeminiApiKey())
   const messagesEndRef = useRef(null)
   const navigate = useNavigate()
 
@@ -47,11 +47,10 @@ export default function Assistant() {
     setIsTyping(true)
 
     try {
-      const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true })
+      const genAI = new GoogleGenerativeAI(apiKey)
+      const selectedModelName = getGeminiModel()
 
-      const systemPrompt = {
-        role: "system",
-        content: `You are TaskFlow AI, an intelligent, positive, and proactive productivity assistant.
+      const systemInstruction = `You are TaskFlow AI, an intelligent, positive, and proactive productivity assistant.
 Your goal is to help the user break down their goals, organize their month/week, and schedule tasks effectively.
 Current Date: ${todayStr()}
 
@@ -59,96 +58,99 @@ Context of user's current tasks (ID, Title, Date, Completed, Priority):
 ${JSON.stringify(getTasks().map(t => ({ id: t.id, title: t.title, date: t.date, completed: t.completed, priority: t.priority })))}
 
 You are equipped with tools to schedule and reschedule tasks. 
-CRITICAL TOOL INSTRUCTIONS:
-Always use the tools exactly according to their schema. If you use 'create_tasks', your output MUST perfectly match this internal syntax natively expected by the system:
-<function=create_tasks>{"tasks": [{"title": "Example", "date": "2026-04-10", "priority": "high", "category": "health", "note": "Notes here."}]}</function>
-DO NOT forget the {"tasks": [...]} object wrapper. DO NOT use malformed tags like <function=create_tasks=[...]>!
-
-CRITICAL LIMITS: To avoid output limits, do NOT schedule more than 14 tasks in a single response. If the user requests a full month, schedule the first 2 weeks and ask if they are ready for the rest. Keep task notes very concise.`
-      }
+CRITICAL LIMITS: To avoid API payload limits, do NOT schedule more than 14 tasks in a single response under any circumstances. If the user requests a full month, strictly schedule the first 14 days and ask if they are ready to schedule the rest. Note descriptions must be very concise.`
 
       const tools = [
         {
-          type: "function",
-          function: {
-            name: "create_tasks",
-            description: "Creates one or more scheduled tasks in the user's task tracker.",
-            parameters: {
-              type: "object",
-              properties: {
-                tasks: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      title: { type: "string", description: "The task name/title" },
-                      date: { type: "string", description: "YYYY-MM-DD date string for scheduling" },
-                      priority: { type: "string", enum: ["high", "medium", "low"], description: "Task priority" },
-                      category: { type: "string", description: "Category enum (work, personal, health, study)" },
-                      note: { type: "string", description: "Optional notes or details for the task" }
-                    },
-                    required: ["title", "date", "priority", "category"]
+          functionDeclarations: [
+            {
+              name: "create_tasks",
+              description: "Creates one or more scheduled tasks in the user's task tracker.",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  tasks: {
+                    type: SchemaType.ARRAY,
+                    items: {
+                      type: SchemaType.OBJECT,
+                      properties: {
+                        title: { type: SchemaType.STRING, description: "The task name/title" },
+                        date: { type: SchemaType.STRING, description: "YYYY-MM-DD date string for scheduling" },
+                        priority: { type: SchemaType.STRING, description: "Task priority: high, medium, low" },
+                        category: { type: SchemaType.STRING, description: "Category enum: work, personal, health, study" },
+                        note: { type: SchemaType.STRING, description: "Optional notes or details for the task" }
+                      },
+                      required: ["title", "date", "priority", "category"]
+                    }
                   }
-                }
-              },
-              required: ["tasks"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "reschedule_tasks",
-            description: "Updates the scheduled date for existing tasks.",
-            parameters: {
-              type: "object",
-              properties: {
-                updates: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      id: { type: "string", description: "The existing task id to reschedule" },
-                      date: { type: "string", description: "YYYY-MM-DD new date string" }
-                    },
-                    required: ["id", "date"]
+                },
+                required: ["tasks"]
+              }
+            },
+            {
+              name: "reschedule_tasks",
+              description: "Updates the scheduled date for existing tasks.",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  updates: {
+                    type: SchemaType.ARRAY,
+                    items: {
+                      type: SchemaType.OBJECT,
+                      properties: {
+                        id: { type: SchemaType.STRING, description: "The existing task id to reschedule" },
+                        date: { type: SchemaType.STRING, description: "YYYY-MM-DD new date string" }
+                      },
+                      required: ["id", "date"]
+                    }
                   }
-                }
-              },
-              required: ["updates"]
+                },
+                required: ["updates"]
+              }
             }
-          }
+          ]
         }
       ]
 
-      // Only send the last 2 valid messages to preserve aggressive 6k token limits
-      const validMessages = newMessages.filter(m => !m.content.startsWith('**Error:**'))
-      const recentMessages = validMessages.slice(-2)
-      const apiMessages = [systemPrompt, ...recentMessages.map(m => ({ role: m.role, content: m.content }))]
-
-      const selectedModel = getGroqModel()
-
-      let runResponse = await groq.chat.completions.create({
-        model: selectedModel,
-        messages: apiMessages,
+      const model = genAI.getGenerativeModel({
+        model: selectedModelName,
+        systemInstruction: systemInstruction,
         tools: tools,
-        tool_choice: "auto",
-        max_tokens: 1500
       })
 
-      const responseMessage = runResponse.choices[0].message
+      // Gemini strictly requires alternating user/model history
+      const prevMessages = newMessages.slice(0, -1).filter(m => 
+        !m.content.startsWith('**Error:**') && !m.content.startsWith('⚠️') && 
+        !m.content.startsWith('⏳') && !m.content.startsWith('🛑') && !m.content.startsWith('🤯')
+      )
+      
+      let safeHistory = []
+      for (let i = prevMessages.length - 1; i >= 1; i--) {
+        if (prevMessages[i].role === 'assistant' && prevMessages[i-1].role === 'user') {
+          safeHistory.unshift({ role: 'model', parts: [{ text: prevMessages[i].content }] })
+          safeHistory.unshift({ role: 'user', parts: [{ text: prevMessages[i-1].content }] })
+          i-- // skip the user message we just processed
+        }
+        if (safeHistory.length >= 4) break // Keep max 2 full conversational pairs
+      }
 
-      // Handle function calling
-      if (responseMessage.tool_calls) {
+      const chat = model.startChat({ history: safeHistory })
+      
+      const result = await chat.sendMessage(input)
+      const response = result.response
+      
+      const calls = response.functionCalls()
+
+      if (calls && calls.length > 0) {
         setMessages(prev => [...prev, { role: 'assistant', content: "I'm scheduling these tasks for you right now..." }])
         
         let totalCreated = 0
         let totalUpdated = 0
 
-        for (const toolCall of responseMessage.tool_calls) {
-          if (toolCall.function.name === 'create_tasks') {
+        for (const call of calls) {
+          if (call.name === 'create_tasks') {
             try {
-              const args = JSON.parse(toolCall.function.arguments)
+              const args = call.args; // natively object in Gemini SDK
               if (args.tasks && Array.isArray(args.tasks)) {
                 args.tasks.forEach(task => {
                   addTask({
@@ -170,9 +172,9 @@ CRITICAL LIMITS: To avoid output limits, do NOT schedule more than 14 tasks in a
             } catch (err) {
               console.error("Tool parse error:", err)
             }
-          } else if (toolCall.function.name === 'reschedule_tasks') {
+          } else if (call.name === 'reschedule_tasks') {
             try {
-              const args = JSON.parse(toolCall.function.arguments)
+              const args = call.args;
               if (args.updates && Array.isArray(args.updates)) {
                 args.updates.forEach(update => {
                   updateTask(update.id, { date: update.date })
@@ -185,10 +187,10 @@ CRITICAL LIMITS: To avoid output limits, do NOT schedule more than 14 tasks in a
           }
         }
 
-        // We completely skip the second LLM API call to save 50% of tokens and prevent Double-Hop Rate Limiting!
+        // We completely skip the second LLM API call to save latency and tokens!
         setMessages(prev => {
           const updated = [...prev]
-          updated.pop()
+          updated.pop() // Remove temporary message
           const actionText = []
           if (totalCreated > 0) actionText.push(`created ${totalCreated} new tasks`)
           if (totalUpdated > 0) actionText.push(`rescheduled ${totalUpdated} tasks`)
@@ -199,41 +201,27 @@ CRITICAL LIMITS: To avoid output limits, do NOT schedule more than 14 tasks in a
             return [...updated, { role: 'assistant', content: `⚠️ I tried to schedule tasks but validation failed. Could you try asking me to schedule just a few tasks at a time?` }]
           }
         })
-
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: responseMessage.content }])
+        setMessages(prev => [...prev, { role: 'assistant', content: response.text() }])
       }
 
     } catch (error) {
-      console.error(error)
+      console.error("Gemini Error:", error)
       const errStr = error.message || ''
       let friendlyError = `⚠️ **AI Connection Error**\n\nSomething went wrong connecting to the AI. Check your internet or API key in Settings.`
       
-      if (errStr.includes('429') || errStr.includes('Rate limit') || errStr.includes('tokens per minute') || errStr.includes('tokens per day')) {
-        const timeMatch = errStr.match(/try again in (?:([0-9]+)m)?([0-9.]+)s/)
-        let mins = 0, secs = 30
-        if (timeMatch) {
-          mins = timeMatch[1] ? parseInt(timeMatch[1], 10) : 0
-          secs = Math.ceil(parseFloat(timeMatch[2]))
-        }
-        
-        const isDaily = errStr.includes('tokens per day (TPD)')
-        
-        if (isDaily) {
-          friendlyError = `🛑 **Daily Token Allowance Reached!**\n\nYou've exhausted your free 100,000 tokens for this specific model today! You must wait **${mins} minutes and ${secs} seconds** before you can use it again. \n\n**Quick Fix:** Go to the Settings page and swap your AI Model to **Llama 3.1 8B** to immediately start using a fresh, massive token bucket!`
-        } else {
-          friendlyError = `⏳ **Speed Limit Reached!**\n\nThe AI hit its free-tier speed limit. Groq's servers require you to wait **exactly ${mins ? mins + 'm ' : ''}${secs} seconds** before sending another message. \n\nTapping CLEAR deletes the conversational history so your tokens stay low, but you still must wait out the physical clock!`
-        }
-      } else if (errStr.includes('400') || errStr.includes('tool call validation failed') || errStr.includes('failed_generation')) {
-        friendlyError = `🤯 **AI formatting hiccup!**\n\nThe AI stumbled while trying to schedule such a massive block of tasks at once. Try asking it to schedule just **one week** at a time!`
-      } else if (errStr.includes('413')) {
-        friendlyError = `📉 **Message too large!**\n\nYour history is too long for this specific model. Tap **CLEAR** and try again.`
+      if (errStr.includes('429') || errStr.includes('quota') || errStr.includes('exhausted')) {
+        friendlyError = `🛑 **Token Limit Reached!**\n\nYou've somehow exhausted Google Gemini's massive free tier limit for this specific minute! Please wait 1 minute before trying again.`
+      } else if (errStr.includes('400') || errStr.toLowerCase().includes('parse')) {
+        friendlyError = `🤯 **AI formatting hiccup!**\n\nThe AI stumbled while trying to schedule tasks. Try asking it to schedule in smaller chunks!`
+      } else if (errStr.includes('API key not valid')) {
+        friendlyError = `🔑 **Invalid API Key!**\n\nYour Gemini API Key is invalid or missing. Go to settings and add a free Gemini API key from Google AI Studio.`
       }
 
       setMessages(prev => [...prev, { role: 'assistant', content: friendlyError }])
     } finally {
       setIsTyping(false)
-      setCooldown(15) // Apply 15s cooldown after every API request completes
+      setCooldown(3) // 3 second anti-spam cooldown 
     }
   }
 
@@ -248,17 +236,17 @@ CRITICAL LIMITS: To avoid output limits, do NOT schedule more than 14 tasks in a
     return (
       <div className="page-bg px-4 pt-6 pb-24 min-h-screen transition-colors flex flex-col items-center justify-center text-center">
         <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 flex items-center justify-center mb-6 shadow-sm">
-          <Bot size={32} />
+          <Sparkles size={32} />
         </div>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Welcome to TaskFlow AI</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-8">
-          Powered by Llama 3.3 70B, your assistant can break down goals and automatically schedule your week.
+          Powered by Google Gemini 1.5, your assistant can completely break down your goals into actionable daily schedules.
         </p>
         <button 
           onClick={() => navigate('/settings')}
           className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2"
         >
-          Add Groq API Key <ArrowRight size={18} />
+          Add Gemini API Key <ArrowRight size={18} />
         </button>
       </div>
     )
@@ -273,7 +261,7 @@ CRITICAL LIMITS: To avoid output limits, do NOT schedule more than 14 tasks in a
             AI Planner
             <Sparkles size={18} className="text-yellow-500" />
           </h1>
-          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase mt-1">Llama 3.3 70B</p>
+          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase mt-1">Gemini 1.5</p>
         </div>
         <button 
           onClick={() => {

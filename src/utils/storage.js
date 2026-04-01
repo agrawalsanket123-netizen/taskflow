@@ -12,8 +12,8 @@ const HABIT_COMPLETIONS_KEY = 'tf_habit_completions'
 const TARGET_WEIGHT_KEY = 'tf_target_weight'
 const WEIGHT_LOG_KEY = 'tf_weight_log'
 const NOTIFICATIONS_KEY = 'tf_notifications'
-const GROQ_API_KEY = 'tf_groq_api_key'
-const GROQ_MODEL_KEY = 'tf_groq_model'
+const GEMINI_API_KEY = 'tf_gemini_api_key'
+const GEMINI_MODEL_KEY = 'tf_gemini_model'
 const CHAT_HISTORY_KEY = 'tf_chat_history'
 
 // ── Helpers ───────────────────────────────────────────────
@@ -129,11 +129,11 @@ export const getReminders = () => parse('tf_reminders', {})
 export const saveReminders = (reminders) => save('tf_reminders', reminders)
 
 // ── AI Assistant ──────────────────────────────────────────
-export const getGroqApiKey = () => localStorage.getItem(GROQ_API_KEY) || ''
-export const setGroqApiKey = (key) => localStorage.setItem(GROQ_API_KEY, key)
+export const getGeminiApiKey = () => localStorage.getItem(GEMINI_API_KEY) || ''
+export const setGeminiApiKey = (key) => localStorage.setItem(GEMINI_API_KEY, key)
 
-export const getGroqModel = () => localStorage.getItem(GROQ_MODEL_KEY) || 'llama-3.3-70b-versatile'
-export const setGroqModel = (model) => localStorage.setItem(GROQ_MODEL_KEY, model)
+export const getGeminiModel = () => localStorage.getItem(GEMINI_MODEL_KEY) || 'gemini-1.5-flash'
+export const setGeminiModel = (model) => localStorage.setItem(GEMINI_MODEL_KEY, model)
 
 export const getChatHistory = () => parse(CHAT_HISTORY_KEY, [])
 export const saveChatHistory = (history) => save(CHAT_HISTORY_KEY, history)

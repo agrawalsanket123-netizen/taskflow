@@ -134,10 +134,10 @@ If the user says "add to my notes", and it's a general fact, use **create_note**
                 type: SchemaType.OBJECT,
                 properties: {
                   title: { type: SchemaType.STRING, description: "Short title for the note" },
-                  content: { type: SchemaType.STRING, description: "Full content of the note" },
+                  body: { type: SchemaType.STRING, description: "Full content of the note" },
                   color: { type: SchemaType.STRING, description: "Optional: blue, purple, yellow, green, pink" }
                 },
-                required: ["title", "content"]
+                required: ["title", "body"]
               }
             }
           ]
@@ -187,9 +187,9 @@ If the user says "add to my notes", and it's a general fact, use **create_note**
               addNote({
                 id: uuidv4(),
                 title: args.title,
-                content: args.content,
+                body: args.body || args.content || args.text,
                 color: args.color || 'blue',
-                date: new Date().toISOString()
+                updatedAt: new Date().toISOString()
               })
               totalNotes++
             } catch (err) {

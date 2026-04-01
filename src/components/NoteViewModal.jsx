@@ -4,16 +4,16 @@ export default function NoteViewModal({ open, note, onEdit, onClose }) {
   if (!open || !note) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end animate-[fade-in_0.2s_ease]">
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end animate-[fade-in_0.2s_ease]">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
         onClick={onClose}
       />
 
       {/* Sheet */}
       <div className="relative bottom-sheet bg-white dark:bg-slate-900 rounded-t-3xl shadow-modal px-5 pt-5 pb-8 max-h-[92vh] overflow-y-auto"
-        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+        style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
         {/* Handle */}
         <div className="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-700 mx-auto mb-5" />
 

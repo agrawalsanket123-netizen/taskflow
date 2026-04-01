@@ -133,8 +133,10 @@ export default function Settings() {
                   }}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                 >
-                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Max Speed & High Limit)</option>
-                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (Max Intelligence)</option>
+                  <option value="gemini-3-flash">Gemini 3.0 Flash (Next Gen Speed)</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash (High Stability)</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Legacy)</option>
                 </select>
               </div>
             </div>

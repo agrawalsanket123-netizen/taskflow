@@ -69,7 +69,8 @@ You are equipped with tools to schedule and reschedule tasks. When a user agrees
                       title: { type: "string", description: "The task name/title" },
                       date: { type: "string", description: "YYYY-MM-DD date string for scheduling" },
                       priority: { type: "string", enum: ["high", "medium", "low"], description: "Task priority" },
-                      category: { type: "string", description: "Category enum (work, personal, health, study)" }
+                      category: { type: "string", description: "Category enum (work, personal, health, study)" },
+                      note: { type: "string", description: "Optional notes or details for the task" }
                     },
                     required: ["title", "date", "priority", "category"]
                   }
@@ -112,7 +113,7 @@ You are equipped with tools to schedule and reschedule tasks. When a user agrees
         messages: apiMessages,
         tools: tools,
         tool_choice: "auto",
-        max_tokens: 4096
+        max_tokens: 2048
       })
 
       const responseMessage = runResponse.choices[0].message
@@ -136,7 +137,7 @@ You are equipped with tools to schedule and reschedule tasks. When a user agrees
                 completed: false,
                 hasTime: false,
                 time: '',
-                description: 'Scheduled by TaskFlow AI',
+                note: task.note || 'Scheduled by TaskFlow AI',
                 subtasks: [],
                 reminder: false
               })

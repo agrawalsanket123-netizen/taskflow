@@ -12,9 +12,18 @@ export default function Assistant() {
   const [messages, setMessages] = useState(getChatHistory())
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
   const [apiKey, setApiKey] = useState(getGroqApiKey())
   const messagesEndRef = useRef(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setInterval(() => setCooldown(prev => prev - 1), 1000)
+    }
+    return () => clearInterval(timer)
+  }, [cooldown])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -29,7 +38,7 @@ export default function Assistant() {
   }, [messages])
 
   const handleSend = async () => {
-    if (!input.trim() || !apiKey) return
+    if (!input.trim() || !apiKey || cooldown > 0) return
 
     const userMsg = { role: 'user', content: input }
     const newMessages = [...messages, userMsg]
@@ -199,6 +208,7 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
       setMessages(prev => [...prev, { role: 'assistant', content: `**Error:** Let's double check your Groq API key in Settings. \`\`\`${error.message}\`\`\`` }])
     } finally {
       setIsTyping(false)
+      setCooldown(15) // Apply 15s cooldown after every API request completes
     }
   }
 
@@ -314,14 +324,18 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isTyping}
+            disabled={!input.trim() || isTyping || cooldown > 0}
             className={`p-3 rounded-xl shrink-0 transition-all ${
-              input.trim() && !isTyping 
+              input.trim() && !isTyping && cooldown === 0
                 ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md' 
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
             }`}
           >
-            <Send size={18} className={input.trim() && !isTyping ? 'translate-x-[1px] -translate-y-[1px]' : ''} />
+            {cooldown > 0 ? (
+              <span className="text-xs font-bold w-[18px] flex items-center justify-center">{cooldown}</span>
+            ) : (
+              <Send size={18} className={input.trim() && !isTyping ? 'translate-x-[1px] -translate-y-[1px]' : ''} />
+            )}
           </button>
         </div>
       </div>

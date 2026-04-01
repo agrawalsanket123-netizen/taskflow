@@ -13,6 +13,7 @@ const TARGET_WEIGHT_KEY = 'tf_target_weight'
 const WEIGHT_LOG_KEY = 'tf_weight_log'
 const NOTIFICATIONS_KEY = 'tf_notifications'
 const GROQ_API_KEY = 'tf_groq_api_key'
+const GROQ_MODEL_KEY = 'tf_groq_model'
 const CHAT_HISTORY_KEY = 'tf_chat_history'
 
 // ── Helpers ───────────────────────────────────────────────
@@ -130,6 +131,9 @@ export const saveReminders = (reminders) => save('tf_reminders', reminders)
 // ── AI Assistant ──────────────────────────────────────────
 export const getGroqApiKey = () => localStorage.getItem(GROQ_API_KEY) || ''
 export const setGroqApiKey = (key) => localStorage.setItem(GROQ_API_KEY, key)
+
+export const getGroqModel = () => localStorage.getItem(GROQ_MODEL_KEY) || 'llama-3.3-70b-versatile'
+export const setGroqModel = (model) => localStorage.setItem(GROQ_MODEL_KEY, model)
 
 export const getChatHistory = () => parse(CHAT_HISTORY_KEY, [])
 export const saveChatHistory = (history) => save(CHAT_HISTORY_KEY, history)

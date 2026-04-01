@@ -4,7 +4,7 @@ import Groq from 'groq-sdk'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { v4 as uuidv4 } from 'uuid'
-import { getGroqApiKey, getChatHistory, saveChatHistory, getTasks, addTask, updateTask } from '../utils/storage'
+import { getGroqApiKey, getGroqModel, getChatHistory, saveChatHistory, getTasks, addTask, updateTask } from '../utils/storage'
 import { todayStr } from '../utils/dateHelpers'
 import { useNavigate } from 'react-router-dom'
 
@@ -112,8 +112,10 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
       const recentMessages = validMessages.slice(-6)
       const apiMessages = [systemPrompt, ...recentMessages.map(m => ({ role: m.role, content: m.content }))]
 
+      const selectedModel = getGroqModel()
+
       let runResponse = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: selectedModel,
         messages: apiMessages,
         tools: tools,
         tool_choice: "auto",
@@ -177,7 +179,7 @@ CRITICAL: To avoid output limits, do NOT schedule more than 14 tasks in a single
         ]
 
         const secondResponse = await groq.chat.completions.create({
-          model: "llama-3.3-70b-versatile",
+          model: selectedModel,
           messages: messagesWithToolResponse,
         })
         

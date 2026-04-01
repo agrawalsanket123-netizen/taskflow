@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Bell, BellOff, Settings as SettingsIcon, ShieldCheck, Info, Copy, CheckCircle2 } from 'lucide-react'
-import { getNotificationPreference, setNotificationPreference, getGroqApiKey, setGroqApiKey } from '../utils/storage'
+import { getNotificationPreference, setNotificationPreference, getGroqApiKey, setGroqApiKey, getGroqModel, setGroqModel } from '../utils/storage'
 import { requestNotificationPermission } from '../utils/fcm'
 import { Bot } from 'lucide-react'
 
@@ -10,6 +10,7 @@ export default function Settings() {
   const [fcmToken, setFcmToken] = useState(localStorage.getItem('tf_fcm_token'))
   const [copied, setCopied] = useState(false)
   const [groqKey, setGroqKey] = useState(getGroqApiKey())
+  const [groqModel, setGroqModelLocal] = useState(getGroqModel())
 
   const handleSaveGroqKey = (e) => {
     const val = e.target.value
@@ -117,8 +118,23 @@ export default function Settings() {
                   value={groqKey}
                   onChange={handleSaveGroqKey}
                   placeholder="gsk_..."
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono mb-4"
                 />
+                <p className="font-bold text-sm text-slate-800 dark:text-slate-100 mb-1 mt-2">AI Model</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">Choose Llama 3.1 8B for much higher free rate limits.</p>
+                <select
+                  value={groqModel}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setGroqModelLocal(val);
+                    setGroqModel(val);
+                  }}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                >
+                  <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Max Intelligence)</option>
+                  <option value="llama-3.1-8b-instant">Llama 3.1 8B (Max Speed & High Limit)</option>
+                  <option value="mixtral-8x7b-32768">Mixtral 8x7B (Great for Long Contexts)</option>
+                </select>
               </div>
             </div>
           </div>

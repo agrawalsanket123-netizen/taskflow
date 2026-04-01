@@ -4,7 +4,7 @@ import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { v4 as uuidv4 } from 'uuid'
-import { getGeminiApiKey, getGeminiModel, getChatHistory, saveChatHistory, getTasks, addTask, updateTask } from '../utils/storage'
+import { getGeminiApiKey, getGeminiModel, getChatHistory, saveChatHistory, getTasks, addTask, updateTask, addNote } from '../utils/storage'
 import { todayStr } from '../utils/dateHelpers'
 import { useNavigate } from 'react-router-dom'
 
